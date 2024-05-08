@@ -1,0 +1,13 @@
+{
+  "name": "algebra_a_tp1",
+  "version": "1.0.0",
+  "description": "",
+  "scripts": {
+    "build": "npx tsc --build"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "typescript": "^5.4.5"
+  }
+}
