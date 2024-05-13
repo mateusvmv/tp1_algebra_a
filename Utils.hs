@@ -1,4 +1,4 @@
-
+module Utils where
 import Data.Bits
 import Data.List
 
