@@ -36,13 +36,9 @@ binExp a b p =
 
 -- Retorna a lista de fatores de um numero
 factorize :: Integer -> [Integer]
-factorize n
-    | n < 2 = []
-    | otherwise = loop n 2
-    where 
-        loop 1 _ = []
-        loop n' f
-            | f*f > n' = [n']     -- factor > sqrt n 
-            | n' `mod` f == 0 = f : loop (n' `div` f) f
-            | otherwise = loop n' (f+1)
-
+factorize 1 = []
+factorize n = factorize' n primes where
+    factorize' :: Integer -> [Integer] -> [Integer]
+    factorize' n (p:ps) = if p*p > n then [n]
+        else if n `rem` p == 0 then p : factorize' (n `div` p) (p:ps)
+        else factorize' n ps
