@@ -1,6 +1,7 @@
 module Utils where
 import Data.Bits
 import Data.List
+import Debug.Trace
 import qualified Data.Set as Set
 
 -- Fibonacci memoizado
@@ -15,12 +16,14 @@ primes :: [Integer] = 2 : 3 : sieve 5 where
     sieve :: Integer -> [Integer]
     sieve n =
         let
-            top = min (n + 100000) (2 + n*n - 4*n)
+            top = min (n + 4096) (2 + n*n - 4*n)
             ps' = takeWhile (\p -> p*p < top) (tail primes)
-            muls p = Set.fromList [l, l+p .. top] where l = (n+p) - (n+p `mod` p*2) + p
-            multiples = Set.unions (map muls ps')
-            candidates = Set.fromList [n, n+2 .. top]
-        in Set.toList (Set.difference candidates multiples) ++ (sieve (top+2))
+            muls p = [l, l+p .. top] where l = p * ((n+p-1) `div` p .|. 1)
+            setBits :: Integer -> [Integer] -> Integer
+            setBits n = foldl' (\b x -> setBit b (fromIntegral (x-n))) 0
+            nonMultiples = complement (setBits n (concat $ map muls ps'))
+            integerPrimes = [i | i <- [n, n+2 .. top], testBit nonMultiples (fromIntegral (i-n))]
+        in integerPrimes ++ (sieve (top+2))
 
 -- Realiza exponenciacao rapida(binaria) mod p
 binExp :: Integer -> Integer -> Integer -> Integer
