@@ -1,2 +1,2 @@
 # Como executar
-`runghs src/Main.hs`
+`runghc -isrc src/Main.hs`
