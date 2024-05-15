@@ -1,5 +1,6 @@
 module Generator where
 import Utils
+import Primes
 import Data.List
 
 -- Retorna um gerador do corpo (Z/pZ)*, p eh primo!
