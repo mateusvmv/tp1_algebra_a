@@ -18,7 +18,7 @@ primes :: [Integer] = 2 : 3 : sieve 5 where
         let
             top = min (n + 4096) (2 + n*n - 4*n)
             ps' = takeWhile (\p -> p*p < top) (tail primes)
-            muls p = [l, l+p .. top] where l = p * ((n+p-1) `div` p .|. 1)
+            muls p = [l, l+2*p .. top] where l = p * ((n+p-1) `div` p .|. 1)
             setBits :: Integer -> [Integer] -> Integer
             setBits n = foldl' (\b x -> setBit b (fromIntegral (x-n))) 0
             nonMultiples = complement (setBits n (concat $ map muls ps'))
