@@ -35,7 +35,7 @@ isPrime n
   | otherwise = all (not . witness) (take 50 primes) where
     (s, d) = f' (0, n-1) where
         f' (s, n)
-          | even n = f' (s+1, n .>>. 1)
+          | even n = f' (s+1, shiftR n 1)
           | otherwise = (s, n)
     witness a =
         let
