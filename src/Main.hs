@@ -4,17 +4,17 @@ import Generator
 import Utils
 import Primes
 import Data.Time
+import System.Random (getStdGen, mkStdGen)
 
 main :: IO ()
 main = do
-    n <- getLine
-    a <- getLine
-
     t0 <- getCurrentTime
-    let p = firstPrimeGT (read n)
-    let g = generator p
+    -- let (list, _) = uniqueRandomInts (1, 100 :: Integer) 50 (mkStdGen 99)
+    x <- getLine
+    let p = firstPrimeGT (read x)
+    -- print list
     print p
-    print g
-    print "logaritmo discreto"
+    print $ factorizeHuge (p-1)
+    print $ generator p
     tf <- getCurrentTime
-    print (diffUTCTime tf t0)
+    print $ diffUTCTime tf t0
