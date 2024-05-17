@@ -2,7 +2,7 @@ module Utils where
 import Data.Bits
 import System.Random
 import Control.Arrow
-import Data.Set
+import qualified Data.Set as Set
 
 -- Fibonacci memoizado
 fibs :: [Integer]
@@ -19,23 +19,13 @@ binExp a b p = f' 1 a b where
       | otherwise = f' r (a^2 `mod` p) (shiftR b 1)
 
 
--- uniqueRandomInts :: (RandomGen g, Random a, Ord a) => (a, a) -> Integer -> g -> [a]
--- uniqueRandomInts range gen = iterate getNext (randomR range gen)
---     where 
---         getNext (x, gen')
---           | x `member` used = getNext (randomR range gen')
---           | otherwise = insert x used
---         used = empty
-
-
-uniqueRandomInts :: (RandomGen g, Random a, Ord a) => (a, a) -> Int -> g -> ([a], g)
-uniqueRandomInts range n = 
-    (Prelude.map fst &&& snd . last) . Prelude.take n . removeDuplicatesUsing fst . iterate getNext . randomR range
-    where getNext = randomR range . snd
-
-removeDuplicatesUsing::Ord b=>(a->b)->[a]->[a]
-removeDuplicatesUsing f theList = [x|(Just x, _, _) <- iterate getNext (Nothing, theList, mempty)]
+-- Permutacao da lista [fst .. snd] 
+randomVals :: (RandomGen t, Integral a, Random a) => (a, a) -> t -> [a]
+randomVals (f, s) gen = nextVal gen Set.empty 0
     where 
-      getNext (_, x:xs, used) 
-        | f x `member` used = (Nothing, xs, used)
-        | otherwise = (Just x, xs, insert (f x) used)
+        maxv = fromIntegral s - fromIntegral f + 1
+        nextVal g used szset
+          | szset == maxv = []
+          | x `Set.member` used = nextVal nextgen used szset
+          | otherwise = x : nextVal nextgen (Set.insert x used) (szset+1)
+          where (x, nextgen) = randomR (f, s) g 
