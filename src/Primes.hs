@@ -4,31 +4,24 @@ import Data.Bits
 import Data.List
 import Debug.Trace
 import Data.Array.Unboxed
-import Data.Array.ST
 
+-- Segmento do crivo
+-- Coprimos de primos em ps entre a e b, a%2=1 e b%2=1
+sieveSeg a' b' ps = [i*2+1 | i <- [a..b], coprime ! i] where
+    a = shiftR a' 1; b = shiftR b' 1
+    muls p = [l, l+p .. b] where l = shiftR (p * ((a'+p-1) `div` p .|. 1)) 1
+    coprime = accumArray (\_ b -> b) True (a, b) (map (,False) $ concatMap muls ps) :: UArray Integer Bool
 -- Primos
-nthPrime :: Int -> Integer = (primes !!)
 primes :: [Integer] = [2,3] ++ sieve 5 where
-    sieve n =
-        let
-            top = min (n + 2^15) (2 + n*n - 4*n)
-            ps' = takeWhile (\p -> p*p < top) (tail primes)
-            muls p = [l, l+2*p .. top] where l = p * ((n+p-1) `div` p .|. 1)
-            multiples = runSTUArray $ do
-                arr <- newArray_ (n, top)
-                mapM_ (\i -> writeArray arr i True) (concatMap muls ps')
-                return arr
-            integerPrimes = [i | i <- [n, n+2 .. top], not $ multiples ! i]
-        in integerPrimes ++ sieve (top+2)
-
+    sieve n = sieveSeg n top ps ++ sieve (top+2) where
+        top = min (n + 2^15) (2 + n*n - 4*n)
+        ps = takeWhile (\p -> p*p < top) (tail primes)
 -- Roda de fatoração
 -- Lista de coprimos dos n primeiros primos, antes do ciclo
 factWheel :: Int -> [Integer]
-factWheel n =
-    let ps = take n primes
-        p = product ps
-        coprimes = [x | x <- [p+1, p+3..p+p], all (\p -> x `mod` p /= 0) ps]
-    in coprimes
+factWheel k = sieveSeg (n+1) (n+n-1) ps where
+    ps = tail $ take k primes
+    n = 2 * product ps
 wheel5 :: [Integer] = factWheel 5
 wheel5Cycle :: Integer = product $ take 5 primes
 
