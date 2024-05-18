@@ -4,6 +4,7 @@ import Data.Bits
 import Data.List
 import Debug.Trace
 import Data.Array.Unboxed
+import Data.Maybe
 
 -- Segmento do crivo
 -- Coprimos de primos em ps entre a e b, a%2=1 e b%2=1
@@ -53,50 +54,42 @@ firstPrimeGT n
     in head [x | x <- candidates, isPrime x]
 
 -- Retorna um fator com pollardRho
-pollardRho :: Integer -> Integer -> Integer
-pollardRho n lim = step 1 2 n 2 2 where
-    step i k n x y
+pollardRho :: Integer -> Maybe Integer -> Integer
+pollardRho n lim
+    | isPrime n = n
+    | otherwise = step 1 2 2 2 (\x->x*x-1) where
+    l = maybe (toInteger.ceiling.sqrt.fromIntegral$n) id lim
+    step i k x y f
         | d /= 1 && d /= n = d
-        | i >= lim = 1
-        | i == k = step (i+1) (2*k) n x' x'
-        | otherwise = step (i+1) k n x' y where
-            d = gcd n (abs y-x)
-            x' = (\x n -> mod (x*x-1) n) x n
+        | i > l = if maybe True (>l) lim then step 1 2 2 2 (+1) else 1
+        | otherwise = step (i+1) k x' y' f where
+            d = gcd n (x-y)
+            x' = mod (f x) n; y' = mod (f.f$y) n
 
 -- Retorna a lista de fatores de um numero
-factorize :: Integer -> [Integer]
-factorize' n ps
+factorizeRho n ps lim
+    | n == 1 || p == 1 = []
+    | otherwise = sort $ factorizeDiv p ps lim ++ factorizeDiv (div n p) ps lim
+    where p = pollardRho n lim
+factorizeDiv n ps lim
     | r == 1 = fs
-    | otherwise = sort $ fs ++ factorize' f ps' ++ factorize' (div r f) ps'
-    where
-        f = pollardRho r r
-        (fs, ps', r) = trialDiv n ps
-factorize n = sort $ factorize' n primes
-
--- Fatoração parcial
-data Factorization = Full [Integer] | Partial [Integer] Integer
-
-instance Show Factorization where
-    show (Full fs) = "Full factorization: " ++ show fs
-    show (Partial fs r) = "Partial factorization: " ++ show fs ++ " * " ++ show r
-
+    | otherwise = sort $ fs ++ factorizeRho n ps' lim
+    where (fs, ps', r) = trialDiv n ps
 trialDiv :: Integer -> [Integer] -> ([Integer], [Integer], Integer)
 trialDiv n (p:ps)
     | n == 1 = ([], [], 1)
     | p*p > n = ([n], [], 1)
     | mod n p == 0 = (p:fs', ps', r)
-    | p < 10^6 = trialDiv n ps
-    | isPrime n = ([n], [], 1)
+    | p < 2^20 = trialDiv n ps
     | otherwise = ([], ps, n)
     where (fs', ps', r) = trialDiv (div n p) (p:ps)
-
-factorizeHuge :: Integer -> Factorization
-factorizeHuge' n ps
-    | r == 1 || f == 1 = fs
-    | otherwise = sort $ (fs ++ factorizeHuge' f ps') ++ factorizeHuge' (div r f) ps'
-    where
-        f = pollardRho r (10^6)
-        (fs, ps', r) = trialDiv n ps
-factorizeHuge n = if p == n then Full fs else Partial fs (div n p) where
+data Factorization = Full [Integer] | Partial [Integer] Integer
+instance Show Factorization where
+    show (Full fs) = "Full factorization: " ++ show fs
+    show (Partial fs r) = "Partial factorization: " ++ show fs ++ " * " ++ show r
+factorize :: Integer -> [Integer]
+factorize n = sort $ factorizeDiv n primes Nothing
+factorizePartial :: Integer -> Factorization
+factorizePartial n = if n == p then Full fs else Partial fs (div n p) where
     p = product fs
-    fs = factorizeHuge' n primes
+    fs = sort $ factorizeRho n primes (Just$2^20)
