@@ -57,12 +57,12 @@ firstPrimeGT n
 pollardRho :: Integer -> Maybe Integer -> Integer
 pollardRho n lim
     | isPrime n = n
-    | otherwise = step 1 2 2 2 (\x->x*x-1) where
-    l = maybe (toInteger.ceiling.sqrt.fromIntegral$n) id lim
-    step i k x y f
+    | otherwise = step 1 2 2 (\x->x*x-1) where
+    l = fromMaybe (toInteger.ceiling.sqrt.fromIntegral$n) lim
+    step i x y f
         | d /= 1 && d /= n = d
-        | i > l = if maybe True (>l) lim then step 1 2 2 2 (+1) else 1
-        | otherwise = step (i+1) k x' y' f where
+        | i > l = if maybe True (>l) lim then step 1 2 2 (+1) else 1
+        | otherwise = step (i+1) x' y' f where
             d = gcd n (x-y)
             x' = mod (f x) n; y' = mod (f.f$y) n
 
@@ -73,7 +73,7 @@ factorizeRho n ps lim
     where p = pollardRho n lim
 factorizeDiv n ps lim
     | r == 1 = fs
-    | otherwise = sort $ fs ++ factorizeRho n ps' lim
+    | otherwise = sort $ fs ++ factorizeRho r ps' lim
     where (fs, ps', r) = trialDiv n ps
 trialDiv :: Integer -> [Integer] -> ([Integer], [Integer], Integer)
 trialDiv n (p:ps)
@@ -81,6 +81,7 @@ trialDiv n (p:ps)
     | p*p > n = ([n], [], 1)
     | mod n p == 0 = (p:fs', ps', r)
     | p < 2^20 = trialDiv n ps
+    | isPrime n = ([n], [], 1)
     | otherwise = ([], ps, n)
     where (fs', ps', r) = trialDiv (div n p) (p:ps)
 data Factorization = Full [Integer] | Partial [Integer] Integer
@@ -92,4 +93,4 @@ factorize n = sort $ factorizeDiv n primes Nothing
 factorizePartial :: Integer -> Factorization
 factorizePartial n = if n == p then Full fs else Partial fs (div n p) where
     p = product fs
-    fs = sort $ factorizeRho n primes (Just$2^20)
+    fs = sort $ factorizeDiv n primes (Just$2^20)
