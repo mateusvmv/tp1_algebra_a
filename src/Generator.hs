@@ -20,7 +20,7 @@ generator p
                 f = factorizeHuge phi
                 fact = case f of
                     Full fs -> fs
-                    Partial fs -> fs
+                    Partial fs _ -> fs
 
                 factors = Set.toList . Set.fromList $ fact
 
