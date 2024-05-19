@@ -13,7 +13,7 @@ main = do
     t0 <- getCurrentTime
     -- print $ randomVals (2, p-1) (mkStdGen 99) !! 10
     print p
-    print $ factorizeHuge (p-1)
+    print $ factorizePartial (p-1)
     print $ generator p
     tf <- getCurrentTime
     print $ diffUTCTime tf t0

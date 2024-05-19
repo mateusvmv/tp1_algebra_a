@@ -17,7 +17,7 @@ generator p
         q = div (p-1) 2
         defaultTest p' = 
             let phi = p-1
-                f = factorizeHuge phi
+                f = factorizePartial phi
                 fact = case f of
                     Full fs -> fs
                     Partial fs _ -> fs
