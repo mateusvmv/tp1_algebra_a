@@ -2,8 +2,32 @@ module Generator where
 import Utils
 import Primes
 import Data.List
+import Data.Maybe
 import qualified Data.Set as Set
 import System.Random
+
+data OrderBounds = Exact Integer | LessThan Integer
+instance Show OrderBounds where
+    show (Exact o) = "ordem = " ++ show o
+    show (LessThan o) = "ordem <= " ++ show o
+reduceOrder g fs p
+    | binExp g 2 p == g = Just 1
+    | binExp g 3 p == g = Just 2
+    | binExp g o p /= 1 = Nothing
+    | otherwise = Just $ f' o fs
+    where
+        o = product fs
+        f' o [] = o
+        f' o (f:fs)
+            | binExp g o' p == 1 = f' o' fs
+            | otherwise = f' o fs
+            where o' = div o f
+orderEstimate g fs = case fs of
+    Full fs -> Exact $ fromMaybe (p-1) $ reduceOrder g fs p
+    Partial fs r -> case reduceOrder g fs p of
+        Just o -> Exact o
+        Nothing -> LessThan $ fromMaybe (p-1) $ reduceOrder g (r:fs) p
+    where p = defactorize fs + 1
 
 -- Retorna um gerador do corpo (Z/pZ)* 
 -- ou um elemento de ordem alta quando 
