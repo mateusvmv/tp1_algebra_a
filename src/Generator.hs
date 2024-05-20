@@ -33,13 +33,13 @@ orderEstimate g fs = case fs of
 -- ou um elemento de ordem alta quando 
 -- não se tem a fatoração de p-1 e p não é um primo seguro, p é primo.
 generator :: Integer -> Integer
-generator p 
+generator p
     | isPrime q = safeTest q
     | otherwise = defaultTest p
     where
-        candidates = randomVals (2, p-1) (mkStdGen 99) 
+        candidates = randomVals (2, p-1) (mkStdGen 99)
         q = div (p-1) 2
-        defaultTest p' = 
+        defaultTest p' =
             let phi = p-1
                 f = factorizePartial phi
                 fact = case f of
@@ -54,11 +54,11 @@ generator p
                     | all (\fac_cur -> binExp x (phi `div` fac_cur) p /= 1) factors = x
                     | otherwise = test xs factors phi
             in test candidates factors phi
-        safeTest q' = 
-            let 
+        safeTest q' =
+            let
                 test:: [Integer] -> Integer
-                test [] = -1 
+                test [] = -1
                 test (x : xs)
                     | x /= (p-1) && (binExp x q' p == (p-1)) = x
                     | otherwise = test xs
-            in test candidates 
+            in test candidates

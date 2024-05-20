@@ -86,8 +86,8 @@ trialDiv n (p:ps)
     where (fs', ps', r) = trialDiv (div n p) (p:ps)
 data Factorization = Full [Integer] | Partial [Integer] Integer
 instance Show Factorization where
-    show (Full fs) = intercalate " * " (map show fs)
-    show (Partial fs r) = intercalate " * " (map show fs) ++ " * " ++ show r ++ " (fatoração parcial)"
+    show (Full fs) = intercalate "*" (map show fs)
+    show (Partial fs r) = intercalate "*" (map show fs) ++ "*" ++ show r ++ " (fatoração parcial)"
 defactorize fs = case fs of
     Full fs -> product fs
     Partial fs r -> product fs * r
