@@ -19,7 +19,7 @@ main = do
     print fs
     print g
     case o of
-        LessThan n -> putStrLn $ "Ordem entre " ++ show (2^41) ++ " e " ++ show n
+        Bounded _ _ -> print o
         _ -> return ()
     tf <- getCurrentTime
     print $ diffUTCTime tf t0
