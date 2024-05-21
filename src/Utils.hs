@@ -48,3 +48,14 @@ invMod a m =
       1 -> (x `mod` m + m) `mod` m
       _ -> error $ "invMod expects coprime numbers, received " ++ show a ++ " " ++ show m
 
+-- Teorema Chinês do Resto
+crt :: [(Integer, Integer)] -> Integer
+crt equations = 
+    let
+        prod = product $ map snd equations
+        res = sum $ map (\(a, n) ->
+            let
+                p = prod `div` n
+                inv = invMod p n
+            in a * p * inv) equations
+    in res `mod` prod
