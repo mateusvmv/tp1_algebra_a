@@ -68,7 +68,7 @@ discreteLog :: Integer -> Integer -> Factorization -> Maybe Integer
 discreteLog a g f
     | m < 2^20 = babyGiantSteps a g m
     | otherwise = case f of
-        Full fs -> if maximum fs < 2^30
+        Full fs -> if maximum fs < 2^34
             then pohligHellman a g fs
             else Nothing
         Partial _ _ -> Nothing
