@@ -15,14 +15,14 @@ main = do
     let p = firstPrimeGT (read x)
     let fs = factorizePartial (p-1)
     let (g,o) = smallHighOrderElement fs
-    let l = pohligHellman (read a) g p
+    let l = discreteLog (read a) g fs
     tf <- getCurrentTime
-    print $ "Primo:     " ++ show p
-    print $ "Gerador:   " ++ show g
+    putStrLn $ "Primo:     " ++ show p
+    putStrLn $ "Gerador:   " ++ show g
     case o of
         Bounded a b -> do
-            print $ "Ordem >=   " ++ show a
-            print $ "Ordem <=   " ++ show b
+            putStrLn $ "Ordem >=   " ++ show a
+            putStrLn $ "Ordem <=   " ++ show b
         _ -> return ()
-    print $ "Logaritmo: " ++ show l
+    putStrLn $ "Logaritmo: " ++ maybe "Inviável" show l
     print $ diffUTCTime tf t0
