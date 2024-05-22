@@ -9,35 +9,36 @@ import Data.List
 import Data.Maybe (isNothing)
 
 -- Algoritmo Baby-step Giant-step
-babyGiantSteps :: Integer -> Integer -> Integer -> Maybe Integer
-babyGiantSteps a g m =
-    let
-        r = toInteger . ceiling . sqrt . fromIntegral $ m
-        powers n = iterate (\x -> x * n `mod` m) 1
-        candidatesG = HM.fromListWith (min) $ zip (take (integerToInt r) $ powers g) ([0..(r-1)])
-        step = invMod (binExp g r m) m
-        test i y = if i < r then
-                       case (HM.lookup y candidatesG) of
-                         Just j -> traceShow i (Just $ i*r + j)
-                         Nothing -> test (i+1) (y*step  `mod` m)
-                   else Nothing
-    in test 0 a
+babyGiantSteps :: Integer -> Integer -> Integer -> Integer -> Maybe Integer
+babyGiantSteps b a p n = f xs ys where
+    r = toInteger . ceiling . sqrt . fromIntegral $ n
+    s = invMod (binExp a r p) p
+    xs = sortOn fst $ zip (iterate ((`mod`p).(*a)) 1) [0..r-1]
+    ys = sortOn fst $ zip (iterate ((`mod`p).(*s)) b) [0..r-1]
+    f [] _ = Nothing
+    f _ [] = Nothing
+    f xxs@((x,i):xs) yys@((y,j):ys)
+        | x>y = f xxs ys
+        | x<y = f xs yys
+        | otherwise = Just $ j*r + i
 
 -- Algoritmo de Pohlig-Hellman para ordem potência de primo - O(e sqrt(p))
 pohligPrimePower :: Integer -> Integer -> (Integer, Integer) -> Integer -> Maybe Integer
 pohligPrimePower a g (p, e) m =
     let
-        gamma = binExp g (p ^ (e-1)) m  -- Has order p
+        n = binExp p e m
+        gamma = binExp g (binExp p (e-1) m) m
         loop :: Integer -> Integer -> Maybe Integer
-        loop k x_bef 
+        loop k x_bef
             | k == e = Just x_bef
             | otherwise = case res of 
                 Nothing -> Nothing 
-                Just res -> loop (k + 1) (x_bef + (res * (p ^ k)) `mod` m)
+                Just res' -> loop (k + 1) (x_bef + (res' * p_k) `mod` n)
                 where
-                    g_inv = invMod g m
-                    ak = binExp (binExp g_inv x_bef m * a) (m `div` binExp p (k + 1) m) m
-                    res = traceShow (ak, gamma, p) babyGiantSteps ak gamma p
+                    p_k = p ^ k
+                    g_inv = binExp g (m-1-x_bef) m 
+                    ak = binExp (g_inv * a) (n `div` (p ^ (k + 1))) m
+                    res = babyGiantSteps ak gamma m p
                     
     in loop 0 0
 
@@ -52,10 +53,10 @@ pohligHellman a g m
         facts = map (\x -> (head x, toInteger . length $ x)) . group . factorize $ groupOrder
         equations = map (\(q, e) ->
             let
-                di = q ^ e
+                di = binExp q e m
                 a' = binExp a (groupOrder `div` di) m
                 g' = binExp g (groupOrder `div` di) m
-                ni = traceShow (a', g', di) (pohligPrimePower a' g' (q, e) m)
+                ni = pohligPrimePower a' g' (q, e) m
             in (ni, di)) facts
 
 -- Calcula o logaritmo discreto de a na base g (gerador!) módulo m
