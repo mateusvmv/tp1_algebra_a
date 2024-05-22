@@ -13,8 +13,16 @@ main = do
     a <- getLine
     t0 <- getCurrentTime
     let p = firstPrimeGT (read x)
-    let fs = factorizeHuge (p-1)
-    let g = generator p
-    print $ "Primo: " ++ show p
-    print $ "Gerador: " ++ show g
-    print $ "Logaritmo: " ++ show (pohligHellman (read a) g p)
+    let fs = factorizePartial (p-1)
+    let (g,o) = smallHighOrderElement fs
+    let l = pohligHellman (read a) g p
+    tf <- getCurrentTime
+    print $ "Primo:     " ++ show p
+    print $ "Gerador:   " ++ show g
+    case o of
+        Bounded a b -> do
+            print $ "Ordem >=   " ++ show a
+            print $ "Ordem <=   " ++ show b
+        _ -> return ()
+    print $ "Logaritmo: " ++ show l
+    print $ diffUTCTime tf t0
