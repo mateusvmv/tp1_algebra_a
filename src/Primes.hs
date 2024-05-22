@@ -29,7 +29,7 @@ wheel5Cycle :: Integer = product $ take 5 primes
 -- Miller Rabin
 isPrime :: Integer -> Bool
 isPrime n
-  | n < 10^12 = isCoprime n (takeWhile (\p -> p*p <= n) primes)
+  | n < (softLimit^2) = isCoprime n (takeWhile (\p -> p*p <= n) primes)
   | not $ isCoprime n (take 1000 primes) = False
   | otherwise = (not . any witness) (take 50 primes) where
     isCoprime n ps = not $ any (\p -> mod n p == 0) ps
@@ -57,14 +57,16 @@ firstPrimeGT n
 pollardRho :: Integer -> Maybe Integer -> Integer
 pollardRho n lim
     | isPrime n = n
-    | otherwise = step 1 2 2 (\x->x*x-1) where
-    l = fromMaybe (toInteger.ceiling.sqrt.fromIntegral$n) lim
-    step i x y f
-        | d /= 1 && d /= n = d
-        | i > l = if maybe True (>l) lim then step 1 2 2 (+1) else 1
-        | otherwise = step (i+1) x' y' f where
-            d = gcd n (x-y)
-            x' = mod (f x) n; y' = mod (f.f$y) n
+    | otherwise = fromMaybe 1 ds where
+        cap = toInteger (maxBound :: Int)
+        exp = fromInteger.min cap.ceiling.(*4).sqrt.sqrt.fromIntegral$n
+        max = maybe maxBound (fromInteger.min cap) lim
+        f k x = mod (x*x+k) n
+        xs = concatMap (\k -> take exp $ iterate (f k) 2) [1..]
+        ys = concatMap (\k -> take exp $ iterate (f k.f k) 2) [1..]
+        ds = find (\d -> d /= 1 && d /= n)
+            . take max
+            $ zipWith (\x y -> gcd n (x-y)) xs ys
 
 -- Retorna a lista de fatores de um numero
 factorizeRho n ps lim
@@ -80,14 +82,14 @@ trialDiv n (p:ps)
     | n == 1 = ([], [], 1)
     | p*p > n = ([n], [], 1)
     | mod n p == 0 = (p:fs', ps', r)
-    | p < 2^20 = trialDiv n ps
+    | p < softLimit = trialDiv n ps
     | isPrime n = ([n], [], 1)
     | otherwise = ([], ps, n)
     where (fs', ps', r) = trialDiv (div n p) (p:ps)
 data Factorization = Full [Integer] | Partial [Integer] Integer
 instance Show Factorization where
     show (Full fs) = intercalate "*" (map show fs)
-    show (Partial fs r) = intercalate "*" (map show fs) ++ "*" ++ show r ++ " (fatoração parcial)"
+    show (Partial fs r) = intercalate "*" (map show $ fs ++ [r]) ++ " (fatoração parcial)"
 defactorize fs = case fs of
     Full fs -> product fs
     Partial fs r -> product fs * r
@@ -97,3 +99,4 @@ factorizePartial :: Integer -> Factorization
 factorizePartial n = if n == p then Full fs else Partial fs (div n p) where
     p = product fs
     fs = sort $ factorizeDiv n primes (Just$2^20)
+softLimit :: Integer = 2^20

@@ -12,8 +12,7 @@ main = do
     t0 <- getCurrentTime
     let p = firstPrimeGT (read x)
     let fs = factorizePartial (p-1)
-    let g = generator p
-    let o = orderEstimate g fs
+    let (g, o) = smallHighOrderElement fs
     -- print $ randomVals (2, p-1) (mkStdGen 99) !! 10
     print p
     print fs

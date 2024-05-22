@@ -29,7 +29,7 @@ orderEstimate :: Integer -> Factorization -> OrderBounds
 orderEstimate g fs = case fs of
     Full fs -> Exact $ fromMaybe (p-1) $ reduceOrder g fs p
     Partial fs r -> if gcd hi r == 1 then Exact hi else Bounded lo hi where
-        lo = div (hi * firstPrimeGT (2^41)) r
+        lo = div (hi * firstPrimeGT softLimit) r
         hi = case reduceOrder g (r:fs) p of
             Just o -> o
             Nothing -> p-1
@@ -40,7 +40,7 @@ highOrderElement f = (g, o) where
     p = defactorize f + 1
     (fs, o) = case f of
         Full fs -> (fs, Exact (p-1))
-        Partial fs r -> (r:fs, Bounded (product fs * firstPrimeGT (2^41)) (p-1))
+        Partial fs r -> (r:fs, Bounded (product fs * firstPrimeGT softLimit) (p-1))
     g = foldl (\a b -> mod (a*b) p) 1 bs
     bs = map findB.multiplicity$fs
     findB (f, k) = head
@@ -55,7 +55,7 @@ smallHighOrderElement f = (g, o) where
     g = head $ filter isHighOrder primes
     (fs, o) = case f of
         Full fs -> (fs, Exact (p-1))
-        Partial fs r -> (r:fs, Bounded (product fs * firstPrimeGT (2^41)) (p-1))
+        Partial fs r -> (r:fs, Bounded (product fs * firstPrimeGT softLimit) (p-1))
     isHighOrder g = all
       ((\f -> binExp g (div (p - 1) f) p /= 1) . head) (group . sort $ fs)
 
