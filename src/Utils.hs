@@ -4,12 +4,6 @@ import System.Random
 import Control.Arrow
 import qualified Data.Set as Set
 
--- Fibonacci memoizado
-fibs :: [Integer]
-fibs = 0 : 1 : zipWith (+) fibs (tail fibs)
-fib :: Int -> Integer
-fib = (fibs !!)
-
 -- Realiza exponenciacao rapida(binaria) mod p
 binExp :: Integer -> Integer -> Integer -> Integer
 binExp a b p = f' 1 a b where

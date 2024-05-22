@@ -11,6 +11,8 @@ instance Show OrderBounds where
     show (Exact o) = "ordem = " ++ show o
     show (Bounded a b) = show a ++ " <= ordem <= " ++ show b
 
+-- Reduz uma ordem de um candidato a gerador g modulo m, com os fatores de p-1 e um primo p
+-- Funciona por remover fatores da ordem de g até que o não seja mais multiplo de sua ordem
 reduceOrder :: Integer -> [Integer] -> Integer -> Maybe Integer
 reduceOrder g fs p
     | binExp g 2 p == g = Just 1
@@ -25,6 +27,8 @@ reduceOrder g fs p
             | otherwise = f' o fs
             where o' = div o f
 
+-- Estima a ordem de g modulo p, dados os fatores de p-1
+-- Resulta em uma ordem exata caso a ordem de g não tenha nenhum fator desconhecido
 orderEstimate :: Integer -> Factorization -> OrderBounds
 orderEstimate g fs = case fs of
     Full fs -> Exact $ fromMaybe (p-1) $ reduceOrder g fs p
@@ -35,6 +39,10 @@ orderEstimate g fs = case fs of
             Nothing -> p-1
     where p = defactorize fs + 1
 
+-- Retorna um elemento com ordem alta modulo p, dados os fatores de p-1
+-- Funciona ao multiplicar elementos com ordem igual a cada um dos fatores, que são coprimos
+-- No caso de haver fatores desconhecidos, busca um elemento cuja ordem divida ao menos um deles
+-- Assim, a ordem resultante é múltipla de todos os fatores conhecidos e de ao menos um fator desconhecido
 highOrderElement :: Factorization -> (Integer, OrderBounds)
 highOrderElement f = (g, o) where
     p = defactorize f + 1
@@ -49,6 +57,10 @@ highOrderElement f = (g, o) where
         $ primes
     multiplicity = map (\f -> (head f, length f)).group.sort
 
+-- Retorna um elemento com ordem alta modulo p, dados os fatores de p-1
+-- Funciona ao buscar elementos cuja ordem divida todos os fatores conhecidos
+-- No caso de haver fatores desconhecidos, a ordem do elemento deve dividir ao menos um deles
+-- Assim, a ordem resultante é múltipla de todos os fatores conhecidos e de ao menos um fator desconhecido
 smallHighOrderElement :: Factorization -> (Integer, OrderBounds)
 smallHighOrderElement f = (g, o) where
     p = defactorize f + 1

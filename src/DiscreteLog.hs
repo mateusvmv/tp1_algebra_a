@@ -8,6 +8,7 @@ import Debug.Trace
 import Data.List
 import Data.Maybe (isNothing)
 
+-- Calcula o logaritmo discreto de b na base a, modulo p, em um grupo de ordem n, em O(sqrt(n))
 -- Algoritmo Baby-step Giant-step
 babyGiantSteps' :: Integer -> Integer -> Integer -> Integer -> Maybe Integer
 babyGiantSteps' b a p n = f xs ys where
@@ -21,6 +22,7 @@ babyGiantSteps' b a p n = f xs ys where
         | x>y = f xxs ys
         | x<y = f xs yys
         | otherwise = Just $ j*r + i
+-- Calcula o logaritmo discreto de b na base a, modulo p, em O(sqrt(p))
 babyGiantSteps b a p = babyGiantSteps' b a p p
 
 -- Algoritmo de Pohlig-Hellman para ordem potência de primo - O(e sqrt(p))
@@ -43,7 +45,7 @@ pohligPrimePower a g (p, e) m =
                     
     in loop 0 0
 
-
+-- Calcula o logaritmo discreto de a na base g módulo m, com os fatores de m-1, em O(e*sqrt(p)) = O(m^(1/4)), com p sendo o maior fator primo
 -- Algoritmo de Pohlig-Hellman geral
 pohligHellman :: Integer -> Integer -> [Integer] -> Maybe Integer
 pohligHellman a g f
@@ -61,9 +63,8 @@ pohligHellman a g f
                 ni = pohligPrimePower a' g' (q, e) m
             in (ni, di)) facts
 
--- Calcula o logaritmo discreto de a na base g (gerador!) módulo m
--- discreteLog :: Integer -> Integer -> Integer -> Integer
--- discreteLog a g m
+-- Calcula o logaritmo discreto de a na base g módulo m, com os fatores de m-1, em O(e*sqrt(p)) = O(m^(1/4)), com p sendo o maior fator primo
+-- Há um limitante, a função não é completa e não aceita entradas muito grandes
 discreteLog :: Integer -> Integer -> Factorization -> Maybe Integer
 discreteLog a g f
     | m < 2^20 = babyGiantSteps a g m
