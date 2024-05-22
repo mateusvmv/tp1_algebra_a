@@ -3,18 +3,18 @@ import Text.Printf (printf)
 import Generator
 import Utils
 import Primes
+import DiscreteLog
 import Data.Time
+import System.Random (getStdGen, mkStdGen)
 
 main :: IO ()
 main = do
-    n <- getLine
+    x <- getLine
     a <- getLine
-
     t0 <- getCurrentTime
-    let p = firstPrimeGT (read n)
+    let p = firstPrimeGT (read x)
+    let fs = factorizeHuge (p-1)
     let g = generator p
-    print p
-    print g
-    print "logaritmo discreto"
-    tf <- getCurrentTime
-    print (diffUTCTime tf t0)
+    print $ "Primo: " ++ show p
+    print $ "Gerador: " ++ show g
+    print $ "Logaritmo: " ++ show (pohligHellman (read a) g p)
