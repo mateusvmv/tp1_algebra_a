@@ -15,16 +15,17 @@ main = do
     let (g, o) = smallHighOrderElement fs
     let l = discreteLog (read a) g fs
     t0 <- getCurrentTime
-    putStrLn $ "Primo:     " ++ show p
-    putStrLn $ "Fatoração: " ++ show fs
-    putStrLn $ "Gerador:   " ++ show g
+    putStrLn $ "Primo      " ++ show p
+    putStrLn $ "Fatoração  " ++ show fs
     case o of
         Bounded a b -> do
+            putStrLn $ "Elemento   " ++ show g
             putStrLn $ "Ordem >=   " ++ show a
             putStrLn $ "Ordem <=   " ++ show b
-        _ -> return ()
+        Exact _ ->
+            putStrLn $ "Gerador    " ++ show g
     t1 <- getCurrentTime
-    putStrLn $ "Tempo:     " ++ show (diffUTCTime t1 t0)
-    putStrLn $ "Logaritmo: " ++ maybe "Inviável" show l
+    putStrLn $ "Tempo      " ++ show (diffUTCTime t1 t0)
+    putStrLn $ "Logaritmo  " ++ maybe "Inviável" show l
     t2 <- getCurrentTime
-    putStrLn $ "Tempo:     " ++ show (diffUTCTime t2 t1)
+    putStrLn $ "Tempo      " ++ show (diffUTCTime t2 t1)
