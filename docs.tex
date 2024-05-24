@@ -42,7 +42,7 @@
 \section{Análises de Complexidade}
 \subsection{Pohlig-Hellman Generalizado}
 O algorítmo de Pohlig-Hellman é utilizado para resolver a equação
-$$ a^k = b \text{ com } G = \langle a \rangle, |G| = n, b \in G$$
+$$ a^k = b \text{ em } G = \langle a \rangle\text{, com }|G| = n\text{ e }b \in G$$
 $$ n = \prod_{i=1}^{m}p_i^{e_i} \text{ fatoração em primos} $$
 Para cada fator primo $p_i$ com multiplicidade $e_i$, nós calculamos
 \begin{align*}
@@ -59,7 +59,8 @@ Chamemos $ k_i = k \bmod p_i^{e_i} $, podemos então calcular $k_i$ em grupos de
     &\;\;\vdots \\
     k &= k_m \mod p_m^{e_m}
 \end{align*}
-A implementação calcula $k_i$ para cada fator primo de $n$ com auxílio da função Pohlig-Hellman para grupos de ordem primária, então calcula $k$ utilizando o algorítmo para o teorema Chinês do resto em $O(m)$
+A implementação calcula $k_i$ para cada fator primo de $n$ com auxílio da função Pohlig-Hellman para grupos de ordem primária em $O(e_i\sqrt{p_i})$, então calcula $k$ utilizando o algorítmo para o teorema Chinês do resto em $O(m)$.
+A complexidade da função é $O(p\log^2{n})$, já que $m, e \leq \log{n}$, com $p = \max(p_0, p_1, ..., p_m) \leq \sqrt{n}$
 
 \noindent\hspace{0.03\linewidth}
 \begin{minipage}{.9\linewidth}
@@ -84,7 +85,7 @@ pohligHellman a g f
 
 \subsection{Pohlig-Hellman com Ordem Primária}
 O algorítmo de Pohlig-Hellman em um grupo com ordem primária, \emph{i.e.} potência de primo, calcula
-$$ a^k = b \text{ com } G = \langle a \rangle, |G| = p^e, b \in G$$
+$$ a^k = b \text{ em } G = \langle a \rangle\text{, com }|G| = p^e\text{ e }b \in G$$
 Suponha que tenhamos grupos denotados por
 \begin{align*}
     G_0 &= G\\
@@ -138,15 +139,15 @@ pohligPrimePower b a (p, e) m = k where
 
 \subsection{Baby-Step Giant-Step}
 O algorítmo Baby-Step Giant-Step é utilizado para resolver a equação
-$$ a^k \equiv b \bmod p \text{ com } G = \langle a \rangle, |G| = n, b \in G$$
+$$ a^k = b \text{ em } G = \langle a \rangle\text{, com }|G| = n\text{ e }b \in G$$
 $$ r = \lceil \sqrt{n} \rceil $$
 Dado que $ |G| = n $, então $ a^k = a^{k \mod n} $, e $ 0 \leq k < n $. Assim, re-escrevemos $ k = j r + i $ com $ 0 \leq i, j < r $.\\
 Para encontrar $i$ e $j$, o algorítmo calcula duas sequências
 \begin{align*}
-    x_i &= a^i \bmod p\\
+    x_i &= a^i\\
     y_j &= b a^{-j r} = a^{k - j r}\\
         &= a^{j r + i - j r}\\
-        &= a^{i} = x_i \bmod p
+        &= a^{i}
 \end{align*}
 A implementação requer que encontremos $i$ e $j$ tal que $x_i = y_j$. As sequências tem tamanho $r$, são ordenadas em $O(r \log r)$, e buscamos elementos iguais em $O(r)$. A complexidade é $O(r \log r)$
 
