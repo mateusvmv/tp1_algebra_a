@@ -39,6 +39,41 @@
 \begin{document}
 
 \section{Análises de Complexidade}
+
+\subsection{Exponenciação Binária}
+
+O algoritmo de exponenciação binária é utilizado para calcular $a^b \mod p$, com $a, b, p \in \mathbb{Z}$. O algoritmo utiliza da seguinte recorrência:
+
+\begin{align*}
+  a^b \mod p = \begin{cases}
+    1 & \text{se } b = 0 \\
+    {(a^{b/2})}^2 & \text{se } b \mod 2 = 0 \\
+    a \cdot {(a^{(b-1)/2})}^2 & \text{se } b \mod 2 = 1 \\
+\end{cases}
+\end{align*}
+
+A cada 2 passos da recorrência, o valor de $b$ diminui, pelo menos, pela metade. A recorrência para quando $b = 0$ e as transições são todas constantes, logo a complexidade de tempo do algoritmo é $O(\log_2 b)$.
+
+\subsection{Algoritmo Extendido de Euclides}
+
+O algoritmo extendido de Euclides calcula, para entradas $a, b \in \mathbb{Z}$, a tripla $(g, x, y) \in \mathbb{Z} \times \mathbb{Z} \times \mathbb{Z}$ tal que:
+
+\begin{align*}
+  g & = \text{mdc}(a, b) \\
+  g & = a \cdot x + b \cdot y \\
+\end{align*}
+
+Para isso, ele utiliza a seguinte recorrência
+
+\begin{align*}
+  \text{emdc}(a, b) = \begin{cases}
+    (a, 1, 0) & \text{se } b = 0 \\
+    (g, y, x - y \cdot q) & \text{c.c. }, \text{ onde } q \cdot a + r = b, (g, x, y) = \text{emdc}(b, r) \\
+\end{cases}
+\end{align*}
+
+A cada dois passos da recorrência, o maior valor diminui pelo menos pela metade, pois $\forall a, b \in \mathbb{N} \colon a \geq b \implies a \mod b \leq \frac{a}{2}$. Logo, a complexidade total do algoritmo é $O(\log_2(\max (a, b)))$.
+
 \subsection{Pohlig-Hellman Generalizado}
 O algorítmo de Pohlig-Hellman é utilizado para resolver a equação
 $$ a^k \cong b \mod p \text{ com } G = \langle a \rangle, |G| = n, b \in G$$
