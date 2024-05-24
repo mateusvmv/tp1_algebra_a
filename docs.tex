@@ -31,7 +31,8 @@
         showspaces=false,
         showstringspaces=false,
         showtabs=false,
-        tabsize=2
+        tabsize=2,
+        escapeinside={tex(}{tex)}
     }
     \lstset{style=mystyle}
     \renewcommand{\lstlistingname}{Algorítmo}
@@ -41,7 +42,7 @@
 \section{Análises de Complexidade}
 \subsection{Pohlig-Hellman Generalizado}
 O algorítmo de Pohlig-Hellman é utilizado para resolver a equação
-$$ a^k \cong b \mod p \text{ com } G = \langle a \rangle, |G| = n, b \in G$$
+$$ a^k = b \text{ com } G = \langle a \rangle, |G| = n, b \in G$$
 $$ n = \prod_{i=1}^{m}p_i^{e_i} \text{ fatoração em primos} $$
 Para cada fator primo $p_i$ com multiplicidade $e_i$, nós calculamos
 \begin{align*}
@@ -58,13 +59,86 @@ Chamemos $ k_i = k \bmod p_i^{e_i} $, podemos então calcular $k_i$ em grupos de
     &\;\;\vdots \\
     k &= k_m \mod p_m^{e_m}
 \end{align*}
-Que pode ser feito utilizando o algorítmo para o teorema Chinês do resto em $O(m)$
+A implementação calcula $k_i$ para cada fator primo de $n$ com auxílio da função Pohlig-Hellman para grupos de ordem primária, então calcula $k$ utilizando o algorítmo para o teorema Chinês do resto em $O(m)$
 
-\subsection{Pohlig-Hellman com Ordem Potência de Primo}
+\noindent\hspace{0.03\linewidth}
+\begin{minipage}{.9\linewidth}
+\begin{lstlisting}[language=haskell,caption=Pohlig Hellman]
+pohligHellman :: Integer -> Integer -> [Integer] -> Maybe Integer
+pohligHellman a g f
+    | any (\(x, val) -> isNothing x) equations = Nothing
+    | otherwise = Just $ crt (map (\(Just x, val) -> (x, val)) equations)
+    where
+        m = product f + 1
+        groupOrder = m - 1
+        facts = map (\x -> (head x, toInteger . length $ x)) . group . factorize $ groupOrder
+        equations = map (\(q, e) ->
+            let
+                di = binExp q e m
+                a' = binExp a (groupOrder `div` di) m
+                g' = binExp g (groupOrder `div` di) m
+                ni = pohligPrimePower a' g' (q, e) m
+            in (ni, di)) facts
+\end{lstlisting}
+\end{minipage}
+
+\subsection{Pohlig-Hellman com Ordem Primária}
+O algorítmo de Pohlig-Hellman em um grupo com ordem primária, \emph{i.e.} potência de primo, calcula
+$$ a^k = b \text{ com } G = \langle a \rangle, |G| = p^e, b \in G$$
+Suponha que tenhamos grupos denotados por
+\begin{align*}
+    G_0 &= G\\
+    G_i &= \lbrace x^{p^i} \vert\ x \in G \rbrace\\
+    G_e &= \lbrace x^{p^e} = 1 \vert\ x \in G \rbrace   &&\text{Pela definição de ordem}\\
+  |G_i| &= p^{e-i}                                      &&\text{Pelo teorema de Lagrange}
+\end{align*}
+Façamos uma sequência $b$
+\begin{align*}
+    b_0 &= b\\
+    b_{i+1} &= b_i a^{-k_i p^{i}}
+\end{align*}
+Definimos $k_i$ como a solução para uma equação utilizando $\pi_i(x) : G_i \rightarrow G_{e-1} |\ x \in G_i$
+\begin{align*}
+    \pi_i(x) &= x^{p^{e-1-i}}\\
+    \pi_0(a)^{k_i} &= \pi_i(b_i)
+\end{align*}
+Observe que $b_i \in G_i$, e portanto $b_e \in G_e$, então $b_e = 1$
+\begin{align*}
+    a^{p^{e-1}k_i} &= b_i^{p^{e-1-i}}           &&\text{Definição de $k_i$}\\
+    (a^{k_i p^i})^{p^{e-1-i}} &= b_i^{p^{e-1-i}}\\
+    b_i = a^{k_ip^{i}} &\implies b_i \in G_i    &&\text{Por construção}\\
+\end{align*}
+Ao expandir $b_e$, obtemos o inverso de $b_0$
+\begin{align*}
+    1 &= b_e\\
+    &= b_{e-1}a^{-k_{e-1} p^{e-1}}\\
+    &= b_{e-2}a^{-\sum_{i=e-2}^{e-1}{k_i p^i}}\\
+    &\;\;\vdots\\
+    &= b_{0}a^{-\sum_{i=0}^{e-1}{k_i p^i}}\\
+    a^{\sum_{i=0}^{e-1}{k_i p^i}} &= b\\
+  \text{ então } k &= \sum_{i=0}^{e-1}{k_i p^i}\\
+\end{align*}
+Assim, resolvemos $e$ equações $\pi(a)^{k_i} = \pi(b_i)$ em $G_{e-1}$, de ordem $p$, utilizando o Baby-Step Giant-Step em $O(\sqrt{p})$, e obtemos $k$ pela equação acima. A complexidade do algorítmo é $O(e\sqrt{p})$
+
+\noindent\hspace{0.03\linewidth}
+\begin{minipage}{.9\linewidth}
+\begin{lstlisting}[language=haskell,caption=Pohlig Prime Power]
+pohligPrimePower :: Integer -> Integer -> (Integer, Integer) -> Integer -> Maybe Integer
+pohligPrimePower b a (p, e) m = k where
+    tex($\pi$tex) i x = binExp x (p^(e-1-i)) m
+    solve b i = babyGiantSteps' (tex($\pi$tex) i b) (tex($\pi$tex) 0 a) m p
+    it (i, b, k) = (i+1, b',) <$> solve b' (i+1) where
+        b' = mod (b * binExp a (m-1-k*(p^i)) m) m
+    k = fmap (sum.map (\(i,_,k) -> k*p^i))
+        . sequence
+        . take (fromInteger e)
+        $ iterate (it=<<) ((0,b,) <$> solve b 0)
+\end{lstlisting}
+\end{minipage}
 
 \subsection{Baby-Step Giant-Step}
 O algorítmo Baby-Step Giant-Step é utilizado para resolver a equação
-$$ a^k \cong b \bmod p \text{ com } G = \langle a \rangle, |G| = n, b \in G$$
+$$ a^k \equiv b \bmod p \text{ com } G = \langle a \rangle, |G| = n, b \in G$$
 $$ r = \lceil \sqrt{n} \rceil $$
 Dado que $ |G| = n $, então $ a^k = a^{k \mod n} $, e $ 0 \leq k < n $. Assim, re-escrevemos $ k = j r + i $ com $ 0 \leq i, j < r $.\\
 Para encontrar $i$ e $j$, o algorítmo calcula duas sequências
@@ -74,14 +148,13 @@ Para encontrar $i$ e $j$, o algorítmo calcula duas sequências
         &= a^{j r + i - j r}\\
         &= a^{i} = x_i \bmod p
 \end{align*}
-
 A implementação requer que encontremos $i$ e $j$ tal que $x_i = y_j$. As sequências tem tamanho $r$, são ordenadas em $O(r \log r)$, e buscamos elementos iguais em $O(r)$. A complexidade é $O(r \log r)$
 
 \noindent\hspace{0.03\linewidth}
 \begin{minipage}{.9\linewidth}
 \begin{lstlisting}[language=haskell,caption=Baby-Steps Giant-Steps]
-bsgs :: Integer -> Integer -> Integer -> Integer -> Maybe Integer
-bsgs b a p n = f xs ys where
+babyGiantSteps' :: Integer -> Integer -> Integer -> Integer -> Maybe Integer
+babyGiantSteps' b a p n = f xs ys where
     r = toInteger . ceiling . sqrt . fromIntegral $ n
     s = invMod (binExp a r p) p
     xs = sortOn fst $ zip (iterate ((`mod`p).(*a)) 1) [0..r-1]
