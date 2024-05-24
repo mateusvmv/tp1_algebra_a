@@ -60,7 +60,7 @@ Chamemos $ k_i = k \bmod p_i^{e_i} $, podemos então calcular $k_i$ em grupos de
     k &= k_m \mod p_m^{e_m}
 \end{align*}
 A implementação calcula $k_i$ para cada fator primo de $n$ com auxílio da função Pohlig-Hellman para grupos de ordem primária em $O(e_i\sqrt{p_i})$, então calcula $k$ utilizando o algorítmo para o teorema Chinês do resto em $O(m)$.
-A complexidade da função é $O(n^\frac{1}{4}log^2{n})$, já que $m, e \leq \log{n}$ e $p \leq \sqrt{n}$
+A complexidade da função é $O(\sqrt[4]{n}\ log^2{n})$, já que $m, e \leq \log{n}$ e $p \leq \sqrt{n}$
 
 \noindent\hspace{0.03\linewidth}
 \begin{minipage}{.9\linewidth}
