@@ -105,9 +105,10 @@ Definimos $k_i$ como a solução para uma equação utilizando $\pi_i(x) : G_i \
 \end{align*}
 Observe que $b_i \in G_i$, e portanto $b_e \in G_e$, então $b_e = 1$
 \begin{align*}
-    a^{p^{e-1}k_i} &= b_i^{p^{e-1-i}}           &&\text{Definição de $k_i$}\\
-    (a^{k_i p^i})^{p^{e-1-i}} &= b_i^{p^{e-1-i}}\\
-    b_i = a^{k_ip^{i}} &\implies b_i \in G_i    &&\text{Por construção}\\
+    \text{Se }b_0 &\in G_0\text{ e existe }k_0 = k\\
+    \pi_i(b_{i+1}) &= \pi_i(b_i)\pi_i(a)^{-k_ip^i}          &&\text{$\pi_i$ aplicado à definição de $b_{i+1}$}\\
+    \pi_i(b_{i+1}) &= \pi_0(a)^{k_i}\pi_0(a)^{-k_i} = 1     &&\text{Usando a definição de $k_i$}\\
+    b_{i+1}^{p^{e-1-i}} = 1 &\implies b_{i+1} = x^{p^{i+1}} \in G_{i+1} &&\text{Teorema de Lagrange e definição de $G_i$}
 \end{align*}
 Ao expandir $b_e$, obtemos o inverso de $b_0$
 \begin{align*}
