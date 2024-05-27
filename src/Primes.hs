@@ -77,7 +77,7 @@ pollardRho :: Integer -> Maybe Integer -> Integer
 pollardRho n lim
     | isPrime n = n
     | otherwise = fromMaybe 1 ds where
-        take n = map fst . takeWhile ((case n of Just n -> (<n); _ -> const True) . snd) . zip [0..]
+        take n = map snd . takeWhile ((case n of Just n -> (<n); _ -> const True) . fst) . zip [0..]
         exp = Just $ toInteger.ceiling.(*4).sqrt.sqrt.fromIntegral$n
         f k x = mod (x*x+k) n
         xs = concatMap (\k -> take exp $ iterate (f k) 2) [1..]
