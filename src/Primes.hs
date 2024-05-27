@@ -6,6 +6,9 @@ import Debug.Trace
 import Data.Array.Unboxed
 import Data.Maybe
 
+-- O maior número armazenado no crivo
+softLimit :: Integer = 2^20
+
 -- Segmento do Crivo de Eratosthenes
 -- Coprimos de primos em ps ∪ {2} entre a e b, a≅1 mod 2 e b≅1 mod 2
 -- Em O(n*log(log(n))) com n = b-a
@@ -74,20 +77,20 @@ pollardRho :: Integer -> Maybe Integer -> Integer
 pollardRho n lim
     | isPrime n = n
     | otherwise = fromMaybe 1 ds where
-        cap = toInteger (maxBound :: Int)
-        exp = fromInteger.min cap.ceiling.(*4).sqrt.sqrt.fromIntegral$n
-        max = maybe maxBound (fromInteger.min cap) lim
+        take n = map fst . takeWhile ((case n of Just n -> (<n); _ -> const True) . snd) . zip [0..]
+        exp = Just $ toInteger.ceiling.(*4).sqrt.sqrt.fromIntegral$n
         f k x = mod (x*x+k) n
         xs = concatMap (\k -> take exp $ iterate (f k) 2) [1..]
         ys = concatMap (\k -> take exp $ iterate (f k.f k) 2) [1..]
         ds = find (\d -> d /= 1 && d /= n)
-            . take max
+            . take lim
             $ zipWith (\x y -> gcd n (x-y)) xs ys
 
 -- Fatora um número usando Pollard Rho para os fatores maiores
 factorizeRho n ps lim
     | n == 1 || p == 1 = []
-    | otherwise = sort $ factorizeDiv p ps lim ++ factorizeDiv (div n p) ps lim
+    | n == p = [n]
+    | otherwise = sort $ factorizeRho p ps lim ++ factorizeRho (div n p) ps lim
     where p = pollardRho n lim
 
 -- Fatora um número por divisão, removendo os seus fatores pequenos, e então usando Pollard Rho para os fatores maiores
@@ -124,6 +127,3 @@ factorizePartial :: Integer -> Factorization
 factorizePartial n = if n == p then Full fs else Partial fs (div n p) where
     p = product fs
     fs = sort $ factorizeDiv n primes (Just$2^20)
-
--- O maior número armazenado no crivo
-softLimit :: Integer = 2^20
