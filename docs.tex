@@ -4,7 +4,7 @@
     \usepackage[parfill]{parskip}
     \usepackage[utf8]{inputenc}
 
-    \usepackage{amsmath,amssymb,amsfonts,amsthm}
+    \usepackage{amsmath,amssymb,amsfonts,amsthm, mathtools}
     \usepackage{listings,xcolor,caption}
 
     \newcommand{\divides}{\mid}
@@ -36,19 +36,23 @@
     \lstset{style=mystyle}
     \renewcommand{\lstlistingname}{Algorítmo}
 
+    \usepackage{mathtools}
+    \DeclarePairedDelimiter{\ceil}{\lceil}{\rceil}
+
 \begin{document}
 
 \section{Análises de Complexidade}
 
 \subsection{Exponenciação Binária}
+\label{binExp}
 
-O algoritmo de exponenciação binária é utilizado para calcular $a^b \mod p$, com $a, b, p \in \mathbb{Z}$. O algoritmo utiliza da seguinte recorrência:
+O algoritmo de exponenciação binária é utilizado para calcular $a^b \bmod p$, com $a, b, p \in \mathbb{Z}$. O algoritmo utiliza da seguinte recorrência:
 
 \begin{align*}
-  a^b \mod p = \begin{cases}
+  a^b \bmod p = \begin{cases}
     1 & \text{se } b = 0 \\
-    {(a^{b/2})}^2 & \text{se } b \mod 2 = 0 \\
-    a \cdot {(a^{(b-1)/2})}^2 & \text{se } b \mod 2 = 1 \\
+    {(a^{b/2})}^2 & \text{se } b \bmod 2 = 0 \\
+    a \cdot {(a^{(b-1)/2})}^2 & \text{se } b \bmod 2 = 1 \\
 \end{cases}
 \end{align*}
 
@@ -72,11 +76,79 @@ Para isso, ele utiliza a seguinte recorrência
 \end{cases}
 \end{align*}
 
-A cada dois passos da recorrência, o maior valor diminui pelo menos pela metade, pois $\forall a, b \in \mathbb{N} \colon a \geq b \implies a \mod b \leq \frac{a}{2}$. Logo, a complexidade total do algoritmo é $O(\log_2(\max (a, b)))$.
+A cada dois passos da recorrência, o maior valor diminui pelo menos pela metade, pois $\forall a, b \in \mathbb{N} \colon a \geq b \implies a \bmod b \leq \frac{a}{2}$. Logo, a complexidade total do algoritmo é $O(\log_2(\max (a, b)))$.
+
+Em particular, o Algoritmo Extendido de Euclides é utilizado para calcular o \textbf{Inverso Modular} de um inteiro $a \bmod m$. Para isso, basta calcular o $x$ tal que $ax + my = \text{mdc(a, m)}$ já que se $a$ é inversível, $\text{mdc}(a, m) = 1$ e $x \bmod m$ é seu inverso modular.
+
+\subsection{Teorema Chinês do Resto}
+
+Para calcular a solução de um sistema de equações modulares com módulos coprimos:
+
+\begin{align*}
+  x \equiv \begin{cases}
+    &a_1 \bmod m_1 \\
+    &a_2 \bmod m_2 \\
+    &\vdots \\
+    &a_k \bmod m_k \\
+\end{cases}
+\end{align*}
+
+utilizamos a fórmula fechada do \textit{Teorema Chinês do Resto}, onde $M_i$ é o produto de todos os módulos menos o i-ésimo e $N_i \coloneq M_i^{-1} \bmod m_i$:
+
+\[
+  x \equiv \sum_{i=1}^{k} a_iM_iN_i (\bmod m_1m_2 \ldots m_k)
+\]
+
+Para isso, é calculado o produtório de todos os primos em $O(k)$, extraídos cada um dos $M_i, N_i$ em $O(\log_2 M_i) \approx O(\log_2 \prod_i m_i) = O(k \cdot \log_2 m)$ e por fim são somados todos os $a_iM_iN_i$ em $O(k)$, resultando em uma complexidade final de $O(k + k*(k* \log_2 m) + k) = O(k^2 \log_2 m)$.
+
+\subsection{Crivo de Eratóstenes}
+
+Para pré-calcular uma lista de primos pequenos, utilizamos do algoritmo do \textbf{Crivo de Eratóstenes}. Em particular, utilizamos uma versão com um consumo menor de memória, o crivo \textit{segmentado}, mas o princípio e complexidade são as mesmas da versão clássica e ela será explicada aqui.
+
+Inicializamos a lista de primos com o $2$ e um vetor de booleanos, assumindo a priori que todos os números são primos, menos o $1$. Em seguida, percorremos os números de $3$ até um certo limite $N$, com passos de $+2$ pois nenhum número par diferente de 2 é primo. Por fim, toda vez que chegamos em um número checamos se ele já foi marcado como não primo. Se sim, continuamos, se não adicionamos ele na lista e marcamos todos os seus múltiplos como não primos. Esse algoritmo tem complexidade $O(\sum_{p \leq n} \frac{n}{p}) = O(n \cdot \sum_{p \leq n}\frac{1}{p})$. Não será demonstrado aqui, mas isso é $O(n \cdot \log \log n)$.
+
+\subsection{Teste de Primalidade}
+\label{isPrime}
+
+Para o teste de primalidade, temos três casos:
+
+\begin{enumerate}
+\item Se o número é menor que o limite da nossa lista de primos ao quadrado, checamos se ele possui algum fator na nossa lista, pois todo número não primo possui um divisor menor ou igual a sua raiz. Com isso, decidimos de forma determinística se ele é primo ou não.
+\item Se ele é maior que esse limite, ainda assim checamos se ele é divisível por algum dos primos na lista. Se for, temos certeza que ele não é primo. Se ele não for, passamos para o 3 passo.
+\item Rodamos o \textit{Miller Rabin} usando os 50 primeiros primos como testemunhas.
+\end{enumerate}
+
+As complexidades para os passos 1 e 2 são $O(L)$, onde $L$ é o limite da lista, pois apenas percorremos ela. Para o Miller Rabin, primeiro retiramos todas as potências de 2 de $n - 1$ em $O(\log_2 n)$, fatorando ele em $2^sd$, $d$ ímpar. Em seguida, para cada uma das testemunhas $a$, calculamos $a^d$ em $O(\log_2 d)$ com a \ref{binExp} e $s$ quadrados de $a^d$ em $O(s)$. Por fim, testamos os valores dessas potências $\bmod n$. Caso $a^d \not\equiv 1 \bmod n$ ou $a^{2^rd} \not\equiv -1 \bmod n$ para algum $r < s$, temos que $n$ não é primo. Logo, a complexidade final do algoritmo é $O(\log_2 n + 50 \cdot (\log_2 d + s)) = O(\log_2n + \log_2 d + \log_2 n) = O(\log_2 n)$.
+
+\subsection{Primeiro Primo Maior que N}
+
+De acordo com o \textit{Postulado de Bertrand}, pra todo $n$, o próximo primo maior que $n$ é menor que $2n$, logo precisamos testar a primalidade de apenas $O(n)$ números com o algoritmo \ref{isPrime}, resultando em um algoritmo $O(n\cdot (\log_2 n))$.
+
+Além disso, utilizamos de \textit{wheel factorization} para iterar apenas por números coprimos e assim reduzir o número de candidatos testados.
+
+\subsection{Pollard Rho}
+\label{pollardRho}
+
+O algoritmo de \textit{Pollard Rho} encontra um fator de um inteiro composto $n$ encontrando um ciclo na sequência $(x_i = f(x_{i-1})) \bmod p$, onde $f$ é um polinômio da forma $f(x) = x^2 + k$, para algum $p$ divisor de $n$.
+Como não sabemos a priori o valor de $p$, procuramos esse ciclo através da sequência $x_i = f(x_{i-1}) \bmod n$.
+Encontramos um ciclo na sequência $\bmod p$ quando achamos $x_i, x_j$ na sequência $\bmod n$ tais que $\text{mdc}(x_s - s_t, n) > 1$. Caso $\text{mdc}(x_s - x_t, n) = n$, precisamos repetir com um polinômio e valor inicial diferentes, caso contrário temos um fator de $n$. É esperado que esse ciclo seja encontrado em $O(\sqrt{p})$, pelo \textit{Paradoxo do Aniversário}.
+
+Em particular, nossa implementação previamente testa vários valores de $k$ em $f(x) = x^2+ k$ até encontrar algum ciclo onde o \textit{mdc} seja diferente de $n$. Para controlar o tamanho da busca em cada sequência e o número de sequências testadas, usamos do valor esperado para o encontro do ciclo caso $p$ seja menor que $\sqrt{n}$, que é $O(\sqrt[4]{n})$. Caso não seja encontrado nenhum fator após todos esses testes, retornamos $1$. Utilizamos de uma constante para limitar o número de sequências testadas e cada sequência é procurada até $\min (4 \cdot \ceil{\sqrt[4]{n}}, C)$, onde $C$ é o maior valor de um inteiro em \textit{Haskell}. Logo, para números suficientemente grandes, o algoritmo tem complexidade constante.
+
+\subsection{Fatoração}
+
+A fatoração dos números em seus fatores primos foi implementada da seguinte forma:
+
+\begin{enumerate}
+\item Os fatores do número que estão presentes no crivo são retirados do número. Se o que resta é $1$, o algoritmo encerra.
+\item Caso contrário, o resto não fatorado do número é fatorado utilizando do algoritmo~\ref{pollardRho} com um limite constante no número de iterações. Ao final do processo, possivelmente sobra um fator composto grande do número, que é retornado junto com a lista de fatores primos fatorados.
+\end{enumerate}
+
+Como as iterações do \textit{Pollard Rho} e os fatores presentes no crivo são constantes, o algoritmo no pior caso tem complexidade de tempo constante.
 
 \subsection{Pohlig-Hellman Generalizado}
 O algorítmo de Pohlig-Hellman é utilizado para resolver a equação
-$$ a^k \cong b \mod p \text{ com } G = \langle a \rangle, |G| = n, b \in G$$
+$$ a^k \cong b \bmod p \text{ com } G = \langle a \rangle, |G| = n, b \in G$$
 $$ n = \prod_{i=1}^{m}p_i^{e_i} \text{ fatoração em primos} $$
 Para cada fator primo $p_i$ com multiplicidade $e_i$, nós calculamos
 \begin{align*}
@@ -88,10 +160,10 @@ Para cada fator primo $p_i$ com multiplicidade $e_i$, nós calculamos
 \end{align*}
 Chamemos $ k_i = k \bmod p_i^{e_i} $, podemos então calcular $k_i$ em grupos de ordem $p_i^{e_i}$ ao resolver $a_i^{k_i} \equiv b_i \bmod p_i^{e_i}$, e obter $k$ ao solucionar o sistema
 \begin{align*}
-    k &= k_1 \mod p_1^{e_1} \\
-    k &= k_2 \mod p_2^{e_2} \\
+    k &= k_1 \bmod p_1^{e_1} \\
+    k &= k_2 \bmod p_2^{e_2} \\
     &\;\;\vdots \\
-    k &= k_m \mod p_m^{e_m}
+    k &= k_m \bmod p_m^{e_m}
 \end{align*}
 Que pode ser feito utilizando o algorítmo para o teorema Chinês do resto em $O(m)$
 
@@ -100,8 +172,8 @@ Que pode ser feito utilizando o algorítmo para o teorema Chinês do resto em $O
 \subsection{Baby-Step Giant-Step}
 O algorítmo Baby-Step Giant-Step é utilizado para resolver a equação
 $$ a^k \cong b \bmod p \text{ com } G = \langle a \rangle, |G| = n, b \in G$$
-$$ r = \lceil \sqrt{n} \rceil $$
-Dado que $ |G| = n $, então $ a^k = a^{k \mod n} $, e $ 0 \leq k < n $. Assim, re-escrevemos $ k = j r + i $ com $ 0 \leq i, j < r $.\\
+$$ r = \ceil{\sqrt{n}}$$
+Dado que $ |G| = n $, então $ a^k = a^{k \bmod n} $, e $ 0 \leq k < n $. Assim, re-escrevemos $ k = j r + i $ com $ 0 \leq i, j < r $.\\
 Para encontrar $i$ e $j$, o algorítmo calcula duas sequências
 \begin{align*}
     x_i &= a^i \bmod p\\
