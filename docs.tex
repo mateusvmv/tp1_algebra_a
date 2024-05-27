@@ -35,11 +35,81 @@
         escapeinside={tex(}{tex)}
     }
     \lstset{style=mystyle}
-    \renewcommand{\lstlistingname}{Algorítmo}
+    \renewcommand{\lstlistingname}{Algoritmo}
 
 \begin{document}
 
 \section{Análises de Complexidade}
+
+\subsection{Algoritmos para encontrar um Gerador/Elemento de Ordem Alta}
+Foram usados dois algoritmos para encontrar um gerador(ou, elemento de ordem alta) para o grupo $\mathbb{Z}/(p\mathbb{Z})$. Vale mencionar que esses algoritmos precisam da fatoração de $p-1$, e quando isso é inviável, conseguimos encontrar apenas um elemento de ordem alta em relação à fatoração parcial de $p-1$.
+
+\subsubsection{Algoritmo I}
+Esse algoritmo se baseia na ideia inicial: testar para geradores candidatos entre $2$ e $p-1$ e cada teste se baseia em verificar se meu candidato $x$ quando elevado à $\frac{p-1}{q_i}$ é diferente de $1$ para todo $q_i$ fator potência de primo de $p-1$.
+Ou seja:
+\begin{align*}
+    x &\in \mathbb{Z}/(p\mathbb{Z})\\
+    p - 1 &= \prod_{i=1}^{m}p_i^{e_i}\\
+    q_i &= p_i^{e_i}\\
+    x \text{ é gerador } &\iff x^{\frac{p-1}{q_i}} \neq 1 \text{ para todo } q_i
+\end{align*}
+
+Dessa forma, cada teste tem complexidade $O(m)$, no qual $m$ é o número de fatores primos distintos de $p-1$. O menor gerador de um grupo foi provado por Grosswald(1981) ser $g_p < p^{0.499}$. Como o algoritmo realiza os testes enquanto não achar um gerador, a complexidade é $O(m \cdot p ^{0.499})$. Porém o algoritmo é bem mais rápido na prática, uma vez que é relativamente comum se ter geradores pequenos para esses grupos, dado que já se tem a fatoração de $p-1$.
+
+\noindent\hspace{0.03\linewidth}
+\begin{minipage}{.9\linewidth}
+\begin{lstlisting}[language=haskell, caption=Busca pelo Menor Gerador]
+smallHighOrderElement :: Factorization -> (Integer, OrderBounds)
+smallHighOrderElement f = (g, o) where
+    p = defactorize f + 1
+    g = head $ filter isHighOrder [2..(p-1)]
+    (fs, o) = case f of
+        Full fs -> (fs, Exact (p-1))
+        Partial fs r -> (r:fs, Bounded (product fs * firstPrimeGT softLimit) (p-1))
+    isHighOrder g = all
+        ((\f -> binExp g (div (p - 1) f) p /= 1) . head) (group . sort $ fs)
+    
+\end{lstlisting}
+\end{minipage}
+
+\subsubsection{Algoritmo II}
+Considere que a fatoração parcial de $p-1$ é dada por $p-1 = p_1^{e_1}\cdot p_2^{e_2} \dots p_m^{e_m} \cdot N$.
+Esse algoritmo se baseia na afirmação:
+\begin{align*}
+g_1, g_2 &\in G\\
+ord(g_1) = n_1 &\text{ e } ord(g_2) = n_2\\
+mdc(n_1, n_2) = 1 &\implies ord(g_1 \cdot g_2) = n_1 \cdot n_2
+\end{align*}
+
+Vamos contruir elementos de ordem específica, fator de $p-1$ da seguinte forma:
+\begin{align*}
+b_j &= a^{(p-1)/p_j^{e_j}} \text{ para } j = 1, 2, \dots, m\\
+ord(b_j) &| p_j^{e_j}                           &&\text{Por construção}\\
+b_j ^ {(p-1)/p_j} &\neq 1 \implies ord(b_j)=p_j^{e_j}
+\end{align*}
+Dessa forma, quando temos a fatoração total de $p-1$, para cada fator primo $p_i^{e_i}$, podemos encontrar um elemento da ordem do fator e os multiplicar para obter um gerador de ordem $p-1$. 
+Já quando temos apenas a fatoração parcial, fazemos o mesmo processo para os fatores $p_i^{e_i}$ conhecidos e para o fator desconhecido $N$, porém aqui não saberemos a ordem exata para este elemento, apenas que está entre $\frac{p-1}{N}$ e $p-1$. 
+
+\noindent\hspace{0.03\linewidth}
+\begin{minipage}{.9\linewidth}
+\begin{lstlisting}[language=haskell,caption=Algoritmo de Gauss]
+highOrderElement :: Factorization -> (Integer, OrderBounds)
+highOrderElement f = (g, o) where
+    p = defactorize f + 1
+    (fs, o) = case f of
+        Full fs -> (fs, Exact (p-1))
+        Partial fs r -> (r:fs, Bounded (product fs * firstPrimeGT softLimit) (p-1))
+    g = foldl (\a b -> mod (a*b) p) 1 bs
+    bs = map findB.multiplicity$fs
+    findB (f, k) = head
+        . filter (\b -> binExp b (div (p-1) f) p /= 1)
+        . map (\a -> binExp a (div (p-1) (f^k)) p)
+        $ primes
+    multiplicity = map (\f -> (head f, length f)).group.sort
+    
+\end{lstlisting}
+\end{minipage}
+
 \subsection{Pohlig-Hellman Generalizado}
 O algorítmo de Pohlig-Hellman é utilizado para resolver a equação
 $$ a^k = b \text{ em } G = \langle a \rangle\text{, com }|G| = n\text{ e }b \in G$$
@@ -82,6 +152,7 @@ pohligHellman a g f
             in (ni, di)) facts
 \end{lstlisting}
 \end{minipage}
+
 
 \subsection{Pohlig-Hellman com Ordem Primária}
 O algorítmo de Pohlig-Hellman em um grupo com ordem primária, \emph{i.e.} potência de primo, calcula
