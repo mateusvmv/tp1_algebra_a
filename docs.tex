@@ -34,7 +34,7 @@
         tabsize=2
     }
     \lstset{style=mystyle}
-    \renewcommand{\lstlistingname}{Algorítmo}
+    \renewcommand{\lstlistingname}{Algoritmo}
 
     \usepackage{mathtools}
     \DeclarePairedDelimiter{\ceil}{\lceil}{\rceil}
@@ -58,6 +58,18 @@ O algoritmo de exponenciação binária é utilizado para calcular $a^b \bmod p$
 
 A cada 2 passos da recorrência, o valor de $b$ diminui, pelo menos, pela metade. A recorrência para quando $b = 0$ e as transições são todas constantes, logo a complexidade de tempo do algoritmo é $O(\log_2 b)$.
 
+\begin{minipage}{.9\linewidth}
+\begin{lstlisting}[language=haskell,caption=Exponenciação Binária]
+binExp :: Integer -> Integer -> Integer -> Integer
+binExp a b p = f' 1 a b where
+    f' r a b
+        | b == 0 = r
+        | odd b = f' (r*a `mod` p) (a^2 `mod` p) (shiftR b 1)
+        | otherwise = f' r (a^2 `mod` p) (shiftR b 1)
+    
+\end{lstlisting}
+\end{minipage}    
+
 \subsection{Algoritmo Extendido de Euclides}
 
 O algoritmo extendido de Euclides calcula, para entradas $a, b \in \mathbb{Z}$, a tripla $(g, x, y) \in \mathbb{Z} \times \mathbb{Z} \times \mathbb{Z}$ tal que:
@@ -80,6 +92,31 @@ A cada dois passos da recorrência, o maior valor diminui pelo menos pela metade
 
 Em particular, o Algoritmo Extendido de Euclides é utilizado para calcular o \textbf{Inverso Modular} de um inteiro $a \bmod m$. Para isso, basta calcular o $x$ tal que $ax + my = \text{mdc(a, m)}$ já que se $a$ é inversível, $\text{mdc}(a, m) = 1$ e $x \bmod m$ é seu inverso modular.
 
+
+\begin{minipage}{.9\linewidth}
+\begin{lstlisting}[language=haskell,caption=Algoritmo Extendido de Euclides]
+egcd :: Integer -> Integer -> (Integer, Integer, Integer)
+egcd a 0 = (a, 1, 0)
+egcd a b =
+    let (g, x1, y1) = egcd b r
+    in (g, y1, x1 - y1 * q)
+        where
+            (q, r) = divMod a b
+\end{lstlisting}
+\end{minipage} \\
+Observe que a implementação para encontrar o inverso modular de um número é apenas uma chamada ao algoritmo extendido de Euclides.
+
+\begin{minipage}{.9\linewidth}
+\begin{lstlisting}[language=haskell,caption=Inverso Modular]
+invMod :: Integer -> Integer -> Integer
+invMod a m =
+    let (g, x, y) = egcd a m
+    in case g of
+        1 -> (x `mod` m + m) `mod` m
+        _ -> error $ "invMod expects coprime numbers, received " ++ show a ++ " " ++ show m    
+\end{lstlisting}
+\end{minipage} 
+    
 \subsection{Teorema Chinês do Resto}
 
 Para calcular a solução de um sistema de equações modulares com módulos coprimos:
@@ -101,11 +138,50 @@ utilizamos a fórmula fechada do \textit{Teorema Chinês do Resto}, onde $M_i$ �
 
 Para isso, é calculado o produtório de todos os primos em $O(k)$, extraídos cada um dos $M_i, N_i$ em $O(\log_2 M_i) \approx O(\log_2 \prod_i m_i) = O(k \cdot \log_2 m)$ e por fim são somados todos os $a_iM_iN_i$ em $O(k)$, resultando em uma complexidade final de $O(k + k*(k* \log_2 m) + k) = O(k^2 \log_2 m)$.
 
+\begin{minipage}{.9\linewidth}
+\begin{lstlisting}[language=haskell,caption=Teorema Chinês do Resto]
+crt :: [(Integer, Integer)] -> Integer
+crt equations = 
+    let
+        prod = product $ map snd equations
+        res = sum $ map (\(a, n) ->
+            let
+                p = prod `div` n
+                inv = invMod p n
+            in a * p * inv) equations
+    in res `mod` prod
+\end{lstlisting}
+\end{minipage} 
+
 \subsection{Crivo de Eratóstenes}
 
 Para pré-calcular uma lista de primos pequenos, utilizamos do algoritmo do \textbf{Crivo de Eratóstenes}. Em particular, utilizamos uma versão com um consumo menor de memória, o crivo \textit{segmentado}, mas o princípio e complexidade são as mesmas da versão clássica e ela será explicada aqui.
 
 Inicializamos a lista de primos com o $2$ e um vetor de booleanos, assumindo a priori que todos os números são primos, menos o $1$. Em seguida, percorremos os números de $3$ até um certo limite $N$, com passos de $+2$ pois nenhum número par diferente de 2 é primo. Por fim, toda vez que chegamos em um número checamos se ele já foi marcado como não primo. Se sim, continuamos, se não adicionamos ele na lista e marcamos todos os seus múltiplos como não primos. Esse algoritmo tem complexidade $O(\sum_{p \leq n} \frac{n}{p}) = O(n \cdot \sum_{p \leq n}\frac{1}{p})$. Não será demonstrado aqui, mas isso é $O(n \cdot \log \log n)$.
+
+\begin{minipage}{0.9\linewidth}
+\begin{lstlisting}[language=haskell,caption=Crivo de Eratóstenes e Lista dos primos]
+-- Crivo Segmentado
+sieveSeg a' b' ps = [i*2+1 | i <- [a..b], coprime ! i] where
+a = shiftR a' 1; b = shiftR b' 1
+muls p = [l, l+p .. b] where l = shiftR (p * ((a'+p-1) `div` p .|. 1)) 1
+coprime = accumArray (\_ b -> b) True (a, b) (map (,False) $ concatMap muls ps) :: UArray Integer Bool
+
+-- Lista dos Primos
+primes :: [Integer] = [2,3] ++ sieve 5 where
+sieve n = sieveSeg n top ps ++ sieve (top+2) where
+    top = min (n + 2^15) (2 + n*n - 4*n)
+    ps = takeWhile (\p -> p*p < top) (tail primes)
+\end{lstlisting}
+\end{minipage}
+
+Observe que aqui definimos um limite para o crivo, ou seja, o $n$-ésimo primo que é calculado em tempo hábil:
+
+\begin{minipage}{0.9\linewidth}
+\begin{lstlisting}[language=haskell,caption=Limite do Crivo]
+softLimit :: Integer = 2^20
+\end{lstlisting}
+\end{minipage}
 
 \subsection{Teste de Primalidade}
 \label{isPrime}
@@ -120,11 +196,58 @@ Para o teste de primalidade, temos três casos:
 
 As complexidades para os passos 1 e 2 são $O(L)$, onde $L$ é o limite da lista, pois apenas percorremos ela. Para o Miller Rabin, primeiro retiramos todas as potências de 2 de $n - 1$ em $O(\log_2 n)$, fatorando ele em $2^sd$, $d$ ímpar. Em seguida, para cada uma das testemunhas $a$, calculamos $a^d$ em $O(\log_2 d)$ com a \ref{binExp} e $s$ quadrados de $a^d$ em $O(s)$. Por fim, testamos os valores dessas potências $\bmod n$. Caso $a^d \not\equiv 1 \bmod n$ ou $a^{2^rd} \not\equiv -1 \bmod n$ para algum $r < s$, temos que $n$ não é primo. Logo, a complexidade final do algoritmo é $O(\log_2 n + 50 \cdot (\log_2 d + s)) = O(\log_2n + \log_2 d + \log_2 n) = O(\log_2 n)$.
 
+\noindent\hspace{0.03\linewidth}
+\begin{minipage}{0.9\linewidth}
+\begin{lstlisting}[language=haskell,caption=Miller-Rabin]
+isPrime :: Integer -> Bool
+isPrime n
+    | n < (softLimit^2) = isCoprime n (takeWhile (\p -> p*p <= n) primes)
+    | not $ isCoprime n (take 1000 primes) = False
+    | otherwise = (not . any witness) (take 50 primes) where
+    isCoprime n ps = not $ any (\p -> mod n p == 0) ps
+    (s, d) = f' (0, n-1) where
+        f' (s, n)
+            | even n = f' (s+1, shiftR n 1)
+            | otherwise = (s, n)
+    witness a =
+        let
+            x = binExp a d n
+            squares = iterate (\x -> x^2 `mod` n) x
+        in all (\x -> x /= 1 && x /= n-1) (take (s+1) squares)
+\end{lstlisting}
+\end{minipage}
+
 \subsection{Primeiro Primo Maior que N}
 
 De acordo com o \textit{Postulado de Bertrand}, pra todo $n$, o próximo primo maior que $n$ é menor que $2n$, logo precisamos testar a primalidade de apenas $O(n)$ números com o algoritmo \ref{isPrime}, resultando em um algoritmo $O(n\cdot (\log_2 n))$.
 
 Além disso, utilizamos de \textit{wheel factorization} para iterar apenas por números coprimos e assim reduzir o número de candidatos testados.
+
+
+\noindent\hspace{0.03\linewidth}
+\begin{minipage}{0.9\linewidth}
+\begin{lstlisting}[language=haskell,caption=Wheel Factorization e Primeiro Primo Maior que N]
+-- Roda de fatoracao
+factWheel :: Int -> [Integer]
+factWheel k = sieveSeg (n+1) (n+n-1) ps where
+    ps = tail $ take k primes
+    n = 2 * product ps
+
+wheel5 :: [Integer] = factWheel 5
+wheel5Cycle :: Integer = product $ take 5 primes
+
+-- Primeiro primo maior que n
+firstPrimeGT :: Integer -> Integer
+firstPrimeGT n
+    | n <= wheel5Cycle = head $ dropWhile (<= n) primes
+    | otherwise = let
+        x = n - (n `mod` wheel5Cycle)
+        wheel = [y+x-wheel5Cycle | y <- wheel5] ++ map (+wheel5Cycle) wheel
+        candidates = dropWhile (<= n) wheel
+    in head [x | x <- candidates, isPrime x]
+
+\end{lstlisting}
+\end{minipage}
 
 \subsection{Pollard Rho}
 \label{pollardRho}
@@ -134,6 +257,26 @@ Como não sabemos a priori o valor de $p$, procuramos esse ciclo através da seq
 Encontramos um ciclo na sequência $\bmod p$ quando achamos $x_i, x_j$ na sequência $\bmod n$ tais que $\text{mdc}(x_s - s_t, n) > 1$. Caso $\text{mdc}(x_s - x_t, n) = n$, precisamos repetir com um polinômio e valor inicial diferentes, caso contrário temos um fator de $n$. É esperado que esse ciclo seja encontrado em $O(\sqrt{p})$, pelo \textit{Paradoxo do Aniversário}.
 
 Em particular, nossa implementação previamente testa vários valores de $k$ em $f(x) = x^2+ k$ até encontrar algum ciclo onde o \textit{mdc} seja diferente de $n$. Para controlar o tamanho da busca em cada sequência e o número de sequências testadas, usamos do valor esperado para o encontro do ciclo caso $p$ seja menor que $\sqrt{n}$, que é $O(\sqrt[4]{n})$. Caso não seja encontrado nenhum fator após todos esses testes, retornamos $1$. Utilizamos de uma constante para limitar o número de sequências testadas e cada sequência é procurada até $\min (4 \cdot \ceil{\sqrt[4]{n}}, C)$, onde $C$ é o maior valor de um inteiro em \textit{Haskell}. Logo, para números suficientemente grandes, o algoritmo tem complexidade constante.
+
+\noindent\hspace{0.03\linewidth}
+\begin{minipage}{0.9\linewidth}
+\begin{lstlisting}[language=haskell,caption=Pollard Rho]
+-- Encontra fator com pollardRho
+pollardRho :: Integer -> Maybe Integer -> Integer
+pollardRho n lim
+    | isPrime n = n
+    | otherwise = fromMaybe 1 ds where
+        cap = toInteger (maxBound :: Int)
+        exp = fromInteger.min cap.ceiling.(*4).sqrt.sqrt.fromIntegral$n
+        max = maybe maxBound (fromInteger.min cap) lim
+        f k x = mod (x*x+k) n
+        xs = concatMap (\k -> take exp $ iterate (f k) 2) [1..]
+        ys = concatMap (\k -> take exp $ iterate (f k.f k) 2) [1..]
+        ds = find (\d -> d /= 1 && d /= n)
+            . take max
+            $ zipWith (\x y -> gcd n (x-y)) xs ys
+\end{lstlisting}
+\end{minipage}
 
 \subsection{Fatoração}
 
@@ -146,8 +289,61 @@ A fatoração dos números em seus fatores primos foi implementada da seguinte f
 
 Como as iterações do \textit{Pollard Rho} e os fatores presentes no crivo são constantes, o algoritmo no pior caso tem complexidade de tempo constante.
 
+\noindent\hspace{0.03\linewidth}
+\begin{minipage}{0.9\linewidth}
+\begin{lstlisting}[language=haskell,caption=Fatoração]
+
+-- Encontra fatores primos que estao no crivo, caso tenha
+trialDiv :: Integer -> [Integer] -> ([Integer], [Integer], Integer)
+trialDiv n (p:ps)
+    | n == 1 = ([], [], 1)
+    | p*p > n = ([n], [], 1)
+    | mod n p == 0 = (p:fs', ps', r)
+    | p < softLimit = trialDiv n ps
+    | isPrime n = ([n], [], 1)
+    | otherwise = ([], ps, n)
+    where (fs', ps', r) = trialDiv (div n p) (p:ps)
+
+-- Fatora um numero usando Pollard Rho para os fatores maiores
+factorizeRho n ps lim
+    | n == 1 || p == 1 = []
+    | otherwise = sort $ factorizeDiv p ps lim ++ factorizeDiv (div n p) ps lim
+    where p = pollardRho n lim
+
+-- Retira os fatores do crivo e fatora o resto com Pollard Rho, dentro do limite estabelecido
+factorizeDiv n ps lim
+    | r == 1 = fs
+    | otherwise = sort $ fs ++ factorizeRho r ps' lim
+    where (fs, ps', r) = trialDiv n ps
+
+\end{lstlisting}
+\end{minipage}
+
+Dessa forma, a primeira função não estabelece um limite de iterações (sempre encontra a fatoração total mas em tempo não viável dependendo do número), ao contrário da segunda, que retorna a fatoração parcial quando não é viável encontrar a fatoração total.  
+
+\noindent\hspace{0.03\linewidth}
+\begin{minipage}{0.9\linewidth}
+\begin{lstlisting}[language=haskell,caption=Fatoração]
+data Factorization = Full [Integer] | Partial [Integer] Integer
+instance Show Factorization where
+    show (Full fs) = intercalate "*" (map show fs)
+    show (Partial fs r) = intercalate "*" (map show $ fs ++ [r]) ++ " (fatoracao parcial)"
+    
+
+-- Tenta fatorar o numero sem o limite de iteracoes
+factorize :: Integer -> [Integer]
+factorize n = sort $ factorizeDiv n primes Nothing
+
+-- Realiza a fatoracao de um numero, com um limite de iteracoes no Pollard Rho
+factorizePartial :: Integer -> Factorization
+factorizePartial n = if n == p then Full fs else Partial fs (div n p) where
+    p = product fs
+    fs = sort $ factorizeDiv n primes (Just$2^20)
+\end{lstlisting}        
+\end{minipage}
+
 \subsection{Pohlig-Hellman Generalizado}
-O algorítmo de Pohlig-Hellman é utilizado para resolver a equação
+O algoritmo de Pohlig-Hellman é utilizado para resolver a equação
 $$ a^k \cong b \bmod p \text{ com } G = \langle a \rangle, |G| = n, b \in G$$
 $$ n = \prod_{i=1}^{m}p_i^{e_i} \text{ fatoração em primos} $$
 Para cada fator primo $p_i$ com multiplicidade $e_i$, nós calculamos
@@ -165,16 +361,16 @@ Chamemos $ k_i = k \bmod p_i^{e_i} $, podemos então calcular $k_i$ em grupos de
     &\;\;\vdots \\
     k &= k_m \bmod p_m^{e_m}
 \end{align*}
-Que pode ser feito utilizando o algorítmo para o teorema Chinês do resto em $O(m)$
+Que pode ser feito utilizando o algoritmo para o teorema Chinês do resto em $O(m)$
 
 \subsection{Pohlig-Hellman com Ordem Potência de Primo}
 
 \subsection{Baby-Step Giant-Step}
-O algorítmo Baby-Step Giant-Step é utilizado para resolver a equação
+O algoritmo Baby-Step Giant-Step é utilizado para resolver a equação
 $$ a^k \cong b \bmod p \text{ com } G = \langle a \rangle, |G| = n, b \in G$$
 $$ r = \ceil{\sqrt{n}}$$
 Dado que $ |G| = n $, então $ a^k = a^{k \bmod n} $, e $ 0 \leq k < n $. Assim, re-escrevemos $ k = j r + i $ com $ 0 \leq i, j < r $.\\
-Para encontrar $i$ e $j$, o algorítmo calcula duas sequências
+Para encontrar $i$ e $j$, o algoritmo calcula duas sequências
 \begin{align*}
     x_i &= a^i \bmod p\\
     y_j &= b a^{-j r} = a^{k - j r}\\
