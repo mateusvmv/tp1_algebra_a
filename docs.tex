@@ -4,7 +4,7 @@
     \usepackage[parfill]{parskip}
     \usepackage[utf8]{inputenc}
 
-    \usepackage{amsmath,amssymb,amsfonts,amsthm}
+    \usepackage{amsmath,amssymb,amsfonts,amsthm, mathtools}
     \usepackage{listings,xcolor,caption}
 
     \newcommand{\divides}{\mid}
@@ -54,7 +54,7 @@ Ou seja:
     x \text{ é gerador } &\iff x^{\frac{p-1}{q_i}} \neq 1 \text{ para todo } q_i
 \end{align*}
 
-Dessa forma, cada teste tem complexidade $O(m)$, no qual $m$ é o número de fatores primos distintos de $p-1$. O menor gerador de um grupo foi provado por Grosswald(1981) ser $g_p < p^{0.499}$. Como o algoritmo realiza os testes enquanto não achar um gerador, a complexidade é $O(m \cdot p ^{0.499})$. Porém o algoritmo é bem mais rápido na prática, uma vez que é relativamente comum se ter geradores pequenos para esses grupos, dado que já se tem a fatoração de $p-1$.
+Dessa forma, cada teste tem complexidade $O(m)$, no qual $m$ é o número de fatores primos distintos de $p-1$. O menor gerador de um grupo foi provado por Pretorius(2018) ser $g_p < p^{0.68}$. Como o algoritmo realiza os testes enquanto não achar um gerador, a complexidade é $O(m \cdot p ^{0.68})$. Porém o algoritmo é bem mais rápido na prática, uma vez que é relativamente comum se ter geradores pequenos para esses grupos, dado que já se tem a fatoração de $p-1$.
 
 \noindent\hspace{0.03\linewidth}
 \begin{minipage}{.9\linewidth}
@@ -83,12 +83,12 @@ mdc(n_1, n_2) = 1 &\implies ord(g_1 \cdot g_2) = n_1 \cdot n_2
 
 Vamos contruir elementos de ordem específica, fator de $p-1$ da seguinte forma:
 \begin{align*}
-b_j &= a^{(p-1)/p_j^{e_j}} \text{ para } j = 1, 2, \dots, m\\
-ord(b_j) &| p_j^{e_j}                           &&\text{Por construção}\\
-b_j ^ {(p-1)/p_j} &\neq 1 \implies ord(b_j)=p_j^{e_j}
+b_j &= a^{(p-1)/p_j^{e_j}} \text{ para } j = 1, 2, \dots, m \\
+ord(b_j) &\mid p_j^{e_j} \text{ pois, } b_j^{p_j^{e_j}} =  a^{p-1} \equiv 1 \bmod p\\
+b_j ^ {p_j^{e_j - 1}} = a ^ {(p-1)/p_j} &\neq 1 \implies ord(b_j)\nmid p_j^{e_j-1}\therefore ord(b_j) = p_j^{e_j}
 \end{align*}
 Dessa forma, quando temos a fatoração total de $p-1$, para cada fator primo $p_i^{e_i}$, podemos encontrar um elemento da ordem do fator e os multiplicar para obter um gerador de ordem $p-1$. 
-Já quando temos apenas a fatoração parcial, fazemos o mesmo processo para os fatores $p_i^{e_i}$ conhecidos e para o fator desconhecido $N$, porém aqui não saberemos a ordem exata para este elemento, apenas que está entre $\frac{p-1}{N}$ e $p-1$. 
+Já quando temos apenas a fatoração parcial, fazemos o mesmo processo para os fatores $p_i^{e_i}$ conhecidos e para o fator desconhecido $N$, porém aqui não saberemos a ordem exata para este elemento, apenas que está entre $q\cdot \frac{p-1}{N}$ e $p-1$, na qual $q$ é o próximo primo maior que o limite imposto na fatoração parcial ($2^{20}$), i.\,e.\, $q = 1048583$. 
 
 \noindent\hspace{0.03\linewidth}
 \begin{minipage}{.9\linewidth}
@@ -110,6 +110,9 @@ highOrderElement f = (g, o) where
 \end{lstlisting}
 \end{minipage}
 
+Observe que a cada fator primo distinto de $p-1$ temos que encontrar um elemento de ordem $p_i^{e_i}$ sequencialmente, porém não foi encontrado um limite superior na literatura para essa busca e por isso chamaremos de $O(k)$. Portanto a complexidade do algoritmo acima é $O(\sum_{i=1}^{m}\cdot k \cdot \log_2{p_i^{e_i}})$.
+
+Note que se considerássemos a escolha do elemento de forma aleatória, teríamos $k$ "limitado" por uma constante. Isso ocorre porque existem $\frac{p-1}{q}$ raízes que satisfazem a equação $x^{(p-1)/q}\equiv 1$, e logo uma probabilidade de $\frac{1}{q}$ de escolher um que satisfaça, porém no algoritmo queremos o contrário, ou seja, números que não satisfaçam a equação anterior, e a probabilidade de escolher um desses é $1 - \frac{1}{q}$. Dessa forma, a probabilidade de falhar nessa busca em $k$ tentativas é $\frac{1}{q^k}$, e podemos tomar $k = 20$ que temos uma probabilidade quase certa de encontrar o elemento que queremos.
 \subsection{Pohlig-Hellman Generalizado}
 O algorítmo de Pohlig-Hellman é utilizado para resolver a equação
 $$ a^k = b \text{ em } G = \langle a \rangle\text{, com }|G| = n\text{ e }b \in G$$
