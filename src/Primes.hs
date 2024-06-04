@@ -119,6 +119,7 @@ defactorize fs = case fs of
     Full fs -> product fs
     Partial fs r -> product fs * r
 
+-- Tenta fatorar o numero sem o limite de iteracoes
 factorize :: Integer -> [Integer]
 factorize n = sort $ factorizeDiv n Nothing
 

@@ -293,30 +293,29 @@ Como as iterações do \textit{Pollard Rho} e os fatores presentes no crivo são
 \noindent\hspace{0.03\linewidth}
 \begin{minipage}{0.9\linewidth}
 \begin{lstlisting}[language=haskell,caption=Fatoração]
-
--- Encontra fatores primos que estao no crivo, caso tenha
-trialDiv :: Integer -> [Integer] -> ([Integer], [Integer], Integer)
-trialDiv n (p:ps)
-    | n == 1 = ([], [], 1)
-    | p*p > n = ([n], [], 1)
-    | mod n p == 0 = (p:fs', ps', r)
-    | p < softLimit = trialDiv n ps
-    | isPrime n = ([n], [], 1)
-    | otherwise = ([], ps, n)
-    where (fs', ps', r) = trialDiv (div n p) (p:ps)
-
 -- Fatora um numero usando Pollard Rho para os fatores maiores
-factorizeRho n ps lim
-    | n == 1 || p == 1 = []
-    | otherwise = sort $ factorizeDiv p ps lim ++ factorizeDiv (div n p) ps lim
+factorizeRho n lim
+    | n == 1 || p == 1 = [] -- nao conseguiu um fator
+    | n == p = [n] -- n e primo
+    | otherwise = factorizeRho p lim ++ factorizeRho (div n p) lim
     where p = pollardRho n lim
 
--- Retira os fatores do crivo e fatora o resto com Pollard Rho, dentro do limite estabelecido
-factorizeDiv n ps lim
-    | r == 1 = fs
-    | otherwise = sort $ fs ++ factorizeRho r ps' lim
-    where (fs, ps', r) = trialDiv n ps
+-- Tenta dividir um numero pelos primos no crivo, retornando os fatores encontrados e o resto
+trialDiv :: Integer -> ([Integer], Integer)
+trialDiv n = (fs, r) where
+    it (n, fs, p:ps)
+        | m==0 = (d, p:fs, p:ps)
+        | otherwise = (n, fs, ps)
+        where (d, m) = divMod n p
+    isOver (r,_,p:_) = p*p > r || p > softLimit || r==1
+    Just (r', fs', p:_) = find isOver $ iterate it (n, [], primes)
+    (r, fs) = if r'/=1 && p*p>r' then (1, r':fs') else (r', fs')
 
+-- Fatora um numero por divisao, removendo os seus fatores pequenos, e entao usando Pollard Rho para os fatores maiores
+factorizeDiv n lim
+    | r == 1 = fs
+    | otherwise = fs ++ factorizeRho r lim
+    where (fs, r) = trialDiv n
 \end{lstlisting}
 \end{minipage}
 
@@ -330,16 +329,15 @@ instance Show Factorization where
     show (Full fs) = intercalate "*" (map show fs)
     show (Partial fs r) = intercalate "*" (map show $ fs ++ [r]) ++ " (fatoracao parcial)"
 
-
 -- Tenta fatorar o numero sem o limite de iteracoes
 factorize :: Integer -> [Integer]
-factorize n = sort $ factorizeDiv n primes Nothing
+factorize n = sort $ factorizeDiv n Nothing
 
 -- Realiza a fatoracao de um numero, com um limite de iteracoes no Pollard Rho
 factorizePartial :: Integer -> Factorization
 factorizePartial n = if n == p then Full fs else Partial fs (div n p) where
     p = product fs
-    fs = sort $ factorizeDiv n primes (Just$2^20)
+    fs = sort $ factorizeDiv n (Just$2^20)
 \end{lstlisting}
 \end{minipage}
 
