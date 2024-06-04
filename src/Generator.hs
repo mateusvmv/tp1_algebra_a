@@ -4,7 +4,6 @@ import Primes
 import Data.List
 import Data.Maybe
 import qualified Data.Set as Set
-import System.Random
 
 data OrderBounds = Exact Integer | Bounded Integer Integer
 instance Show OrderBounds where
@@ -79,7 +78,7 @@ generator p
     | isPrime q = safeTest q
     | otherwise = defaultTest p
     where
-        candidates = randomVals (2, p-1) (mkStdGen 99)
+        candidates = primes
         q = div (p-1) 2
         defaultTest p' =
             let phi = p-1

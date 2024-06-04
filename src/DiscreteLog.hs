@@ -2,7 +2,6 @@ module DiscreteLog where
 
 import Utils
 import Primes
-import qualified Data.HashMap.Lazy as HM
 import GHC.Num.Integer
 import Debug.Trace
 import Data.List

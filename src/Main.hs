@@ -4,7 +4,6 @@ import Utils
 import Primes
 import DiscreteLog
 import Data.Time
-import System.Random (getStdGen, mkStdGen)
 
 main :: IO ()
 main = do
