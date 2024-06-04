@@ -412,6 +412,18 @@ highOrderElement f = (g, o) where
 \end{lstlisting}
 \end{minipage}
 
+\subsection{Logarítmo Discreto}
+O problema do logarítmo discreto é a equação
+$$ a^k = b \text{ em } G = \langle a \rangle\text{, com }|G| = n\text{ e }b \in G$$
+Como $n$ pode ser muito grande, são utilizados outros algorítmos, porque a solução ingênua roda em $O(n)$
+
+\noindent\hspace{0.03\linewidth}
+\begin{minipage}{.9\linewidth}
+\begin{lstlisting}[language=haskell,caption=Logarítmo Discreto Ingênuo]
+naiveDiscreteLog b a p = fmap fst . find ((==b) . snd) . zip [0..p-1] $ iterate ((`mod`p) . (*a)) 1
+\end{lstlisting}
+\end{minipage}
+
 \subsection{Pohlig-Hellman Generalizado}
 O algorítmo de Pohlig-Hellman é utilizado para resolver a equação
 $$ a^k = b \text{ em } G = \langle a \rangle\text{, com }|G| = n\text{ e }b \in G$$

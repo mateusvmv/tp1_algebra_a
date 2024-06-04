@@ -7,6 +7,9 @@ import Debug.Trace
 import Data.List
 import Data.Maybe
 
+-- Algorítmo Ingênuo de Logarítmo Discreto
+naiveDiscreteLog b a p = fmap fst . find ((==b) . snd) . zip [0..p-1] $ iterate ((`mod`p) . (*a)) 1
+
 -- Calcula o logaritmo discreto de b na base a, modulo p, em um grupo de ordem n, em O(sqrt(n))
 -- Algoritmo Baby-step Giant-step
 babyGiantSteps' :: Integer -> Integer -> Integer -> Integer -> Maybe Integer
@@ -58,7 +61,8 @@ pohligHellman a g f
 -- Há um limitante, a função não é completa e não aceita entradas muito grandes
 discreteLog :: Integer -> Integer -> Factorization -> Maybe Integer
 discreteLog a g f
-    | m < 2^20 = babyGiantSteps a g m
+    | m < 2^10 = naiveDiscreteLog a g m
+    | m < 2^34 = babyGiantSteps a g m
     | otherwise = case f of
         Full fs -> if maximum fs < 2^34
             then pohligHellman a g fs
