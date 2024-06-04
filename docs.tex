@@ -31,10 +31,11 @@
         showspaces=false,
         showstringspaces=false,
         showtabs=false,
-        tabsize=2
+        tabsize=2,
+        escapeinside={tex(}{tex)}
     }
     \lstset{style=mystyle}
-    \renewcommand{\lstlistingname}{Algorítmo}
+    \renewcommand{\lstlistingname}{Algoritmo}
 
     \usepackage{mathtools}
     \DeclarePairedDelimiter{\ceil}{\lceil}{\rceil}
@@ -146,9 +147,78 @@ A fatoração dos números em seus fatores primos foi implementada da seguinte f
 
 Como as iterações do \textit{Pollard Rho} e os fatores presentes no crivo são constantes, o algoritmo no pior caso tem complexidade de tempo constante.
 
+\subsection{Algoritmos para encontrar um Gerador/Elemento de Ordem Alta}
+Foram usados dois algoritmos para encontrar um gerador(ou, elemento de ordem alta) para o grupo $\mathbb{Z}/(p\mathbb{Z})$. Vale mencionar que esses algoritmos precisam da fatoração de $p-1$, e quando isso é inviável, conseguimos encontrar apenas um elemento de ordem alta em relação à fatoração parcial de $p-1$.
+
+\subsubsection{Algoritmo I}
+Esse algoritmo se baseia na ideia inicial: testar para geradores candidatos entre $2$ e $p-1$ e cada teste se baseia em verificar se meu candidato $x$ quando elevado à $\frac{p-1}{q_i}$ é diferente de $1$ para todo $q_i$ fator potência de primo de $p-1$.
+Ou seja:
+\begin{align*}
+    x &\in \mathbb{Z}/(p\mathbb{Z})\\
+    p - 1 &= \prod_{i=1}^{m}p_i^{e_i}\\
+    q_i &= p_i^{e_i}\\
+    x \text{ é gerador } &\iff x^{\frac{p-1}{q_i}} \neq 1 \text{ para todo } q_i
+\end{align*}
+
+Dessa forma, cada teste tem complexidade $O(m)$, no qual $m$ é o número de fatores primos distintos de $p-1$. O menor gerador de um grupo foi provado por Grosswald(1981) ser $g_p < p^{0.499}$. Como o algoritmo realiza os testes enquanto não achar um gerador, a complexidade é $O(m \cdot p ^{0.499})$. Porém o algoritmo é bem mais rápido na prática, uma vez que é relativamente comum se ter geradores pequenos para esses grupos, dado que já se tem a fatoração de $p-1$.
+
+\noindent\hspace{0.03\linewidth}
+\begin{minipage}{.9\linewidth}
+\begin{lstlisting}[language=haskell, caption=Busca pelo Menor Gerador]
+smallHighOrderElement :: Factorization -> (Integer, OrderBounds)
+smallHighOrderElement f = (g, o) where
+    p = defactorize f + 1
+    g = head $ filter isHighOrder [2..(p-1)]
+    (fs, o) = case f of
+        Full fs -> (fs, Exact (p-1))
+        Partial fs r -> (r:fs, Bounded (product fs * firstPrimeGT softLimit) (p-1))
+    isHighOrder g = all
+        ((\f -> binExp g (div (p - 1) f) p /= 1) . head) (group . sort $ fs)
+    
+\end{lstlisting}
+\end{minipage}
+
+\subsubsection{Algoritmo II}
+Considere que a fatoração parcial de $p-1$ é dada por $p-1 = p_1^{e_1}\cdot p_2^{e_2} \dots p_m^{e_m} \cdot N$.
+Esse algoritmo se baseia na afirmação:
+\begin{align*}
+g_1, g_2 &\in G\\
+ord(g_1) = n_1 &\text{ e } ord(g_2) = n_2\\
+mdc(n_1, n_2) = 1 &\implies ord(g_1 \cdot g_2) = n_1 \cdot n_2
+\end{align*}
+
+Vamos contruir elementos de ordem específica, fator de $p-1$ da seguinte forma:
+\begin{align*}
+b_j &= a^{(p-1)/p_j^{e_j}} \text{ para } j = 1, 2, \dots, m\\
+ord(b_j) &| p_j^{e_j}                           &&\text{Por construção}\\
+b_j ^ {(p-1)/p_j} &\neq 1 \implies ord(b_j)=p_j^{e_j}
+\end{align*}
+Dessa forma, quando temos a fatoração total de $p-1$, para cada fator primo $p_i^{e_i}$, podemos encontrar um elemento da ordem do fator e os multiplicar para obter um gerador de ordem $p-1$. 
+Já quando temos apenas a fatoração parcial, fazemos o mesmo processo para os fatores $p_i^{e_i}$ conhecidos e para o fator desconhecido $N$, porém aqui não saberemos a ordem exata para este elemento, apenas que está entre $\frac{p-1}{N}$ e $p-1$. 
+
+\noindent\hspace{0.03\linewidth}
+\begin{minipage}{.9\linewidth}
+\begin{lstlisting}[language=haskell,caption=Algoritmo de Gauss]
+highOrderElement :: Factorization -> (Integer, OrderBounds)
+highOrderElement f = (g, o) where
+    p = defactorize f + 1
+    (fs, o) = case f of
+        Full fs -> (fs, Exact (p-1))
+        Partial fs r -> (r:fs, Bounded (product fs * firstPrimeGT softLimit) (p-1))
+    g = foldl (\a b -> mod (a*b) p) 1 bs
+    bs = map findB.multiplicity$fs
+    findB (f, k) = head
+        . filter (\b -> binExp b (div (p-1) f) p /= 1)
+        . map (\a -> binExp a (div (p-1) (f^k)) p)
+        $ primes
+    multiplicity = map (\f -> (head f, length f)).group.sort
+    
+\end{lstlisting}
+\end{minipage}
+
 \subsection{Pohlig-Hellman Generalizado}
 O algorítmo de Pohlig-Hellman é utilizado para resolver a equação
-$$ a^k \cong b \bmod p \text{ com } G = \langle a \rangle, |G| = n, b \in G$$
+$$ a^k = b \text{ em } G = \langle a \rangle\text{, com }|G| = n\text{ e }b \in G$$
 $$ n = \prod_{i=1}^{m}p_i^{e_i} \text{ fatoração em primos} $$
 Para cada fator primo $p_i$ com multiplicidade $e_i$, nós calculamos
 \begin{align*}
@@ -165,30 +235,104 @@ Chamemos $ k_i = k \bmod p_i^{e_i} $, podemos então calcular $k_i$ em grupos de
     &\;\;\vdots \\
     k &= k_m \bmod p_m^{e_m}
 \end{align*}
-Que pode ser feito utilizando o algorítmo para o teorema Chinês do resto em $O(m)$
+A implementação calcula $k_i$ para cada fator primo de $n$ com auxílio da função Pohlig-Hellman para grupos de ordem primária em $O(e_i\sqrt{p_i})$, então calcula $k$ utilizando o algorítmo para o teorema Chinês do resto em $O(m)$.
+A complexidade da função é $O(\sqrt[4]{n}\ log^2{n})$, já que $m, e \leq \log{n}$ e $p \leq \sqrt{n}$
 
-\subsection{Pohlig-Hellman com Ordem Potência de Primo}
+\noindent\hspace{0.03\linewidth}
+\begin{minipage}{.9\linewidth}
+\begin{lstlisting}[language=haskell,caption=Pohlig Hellman]
+pohligHellman :: Integer -> Integer -> [Integer] -> Maybe Integer
+pohligHellman a g f
+    | any (\(x, val) -> isNothing x) equations = Nothing
+    | otherwise = Just $ crt (map (\(Just x, val) -> (x, val)) equations)
+    where
+        m = product f + 1
+        groupOrder = m - 1
+        facts = map (\x -> (head x, toInteger . length $ x)) . group . factorize $ groupOrder
+        equations = map (\(q, e) ->
+            let
+                di = binExp q e m
+                a' = binExp a (groupOrder `div` di) m
+                g' = binExp g (groupOrder `div` di) m
+                ni = pohligPrimePower a' g' (q, e) m
+            in (ni, di)) facts
+\end{lstlisting}
+\end{minipage}
+
+
+\subsection{Pohlig-Hellman com Ordem Primária}
+O algorítmo de Pohlig-Hellman em um grupo com ordem primária, \emph{i.e.} potência de primo, calcula
+$$ a^k = b \text{ em } G = \langle a \rangle\text{, com }|G| = p^e\text{ e }b \in G$$
+Suponha que tenhamos grupos denotados por
+\begin{align*}
+    G_0 &= G\\
+    G_i &= \lbrace x^{p^i} \vert\ x \in G \rbrace\\
+    G_e &= \lbrace x^{p^e} = 1 \vert\ x \in G \rbrace   &&\text{Pela definição de ordem}\\
+  |G_i| &= p^{e-i}                                      &&\text{Pelo teorema de Lagrange}
+\end{align*}
+Façamos uma sequência $b$
+\begin{align*}
+    b_0 &= b\\
+    b_{i+1} &= b_i a^{-k_i p^{i}}
+\end{align*}
+Definimos $k_i$ como a solução para uma equação utilizando $\pi_i(x) : G_i \rightarrow G_{e-1} |\ x \in G_i$
+\begin{align*}
+    \pi_i(x) &= x^{p^{e-1-i}}\\
+    \pi_0(a)^{k_i} &= \pi_i(b_i)
+\end{align*}
+Observe que $b_i \in G_i$, e portanto $b_e \in G_e$, então $b_e = 1$
+\begin{align*}
+    a^{p^{e-1}k_i} &= b_i^{p^{e-1-i}}           &&\text{Definição de $k_i$}\\
+    (a^{k_i p^i})^{p^{e-1-i}} &= b_i^{p^{e-1-i}}\\
+    b_i = a^{k_ip^{i}} &\implies b_i \in G_i    &&\text{Por construção}\\
+\end{align*}
+Ao expandir $b_e$, obtemos o inverso de $b_0$
+\begin{align*}
+    1 &= b_e\\
+    &= b_{e-1}a^{-k_{e-1} p^{e-1}}\\
+    &= b_{e-2}a^{-\sum_{i=e-2}^{e-1}{k_i p^i}}\\
+    &\;\;\vdots\\
+    &= b_{0}a^{-\sum_{i=0}^{e-1}{k_i p^i}}\\
+    a^{\sum_{i=0}^{e-1}{k_i p^i}} &= b\\
+  \text{ então } k &= \sum_{i=0}^{e-1}{k_i p^i}\\
+\end{align*}
+Assim, resolvemos $e$ equações $\pi(a)^{k_i} = \pi(b_i)$ em $G_{e-1}$, de ordem $p$, utilizando o Baby-Step Giant-Step em $O(\sqrt{p})$, e obtemos $k$ pela equação acima. A complexidade do algorítmo é $O(e\sqrt{p})$
+
+\noindent\hspace{0.03\linewidth}
+\begin{minipage}{.9\linewidth}
+\begin{lstlisting}[language=haskell,caption=Pohlig Prime Power]
+pohligPrimePower :: Integer -> Integer -> (Integer, Integer) -> Integer -> Maybe Integer
+pohligPrimePower b a (p, e) m = k where
+    tex($\pi$tex) i x = binExp x (p^(e-1-i)) m
+    solve b i = babyGiantSteps' (tex($\pi$tex) i b) (tex($\pi$tex) 0 a) m p
+    it (i, b, k) = (i+1, b',) <$> solve b' (i+1) where
+        b' = mod (b * binExp a (m-1-k*(p^i)) m) m
+    k = fmap (sum.map (\(i,_,k) -> k*p^i))
+        . sequence
+        . take (fromInteger e)
+        $ iterate (it=<<) ((0,b,) <$> solve b 0)
+\end{lstlisting}
+\end{minipage}
 
 \subsection{Baby-Step Giant-Step}
 O algorítmo Baby-Step Giant-Step é utilizado para resolver a equação
-$$ a^k \cong b \bmod p \text{ com } G = \langle a \rangle, |G| = n, b \in G$$
-$$ r = \ceil{\sqrt{n}}$$
-Dado que $ |G| = n $, então $ a^k = a^{k \bmod n} $, e $ 0 \leq k < n $. Assim, re-escrevemos $ k = j r + i $ com $ 0 \leq i, j < r $.\\
+$$ a^k = b \text{ em } G = \langle a \rangle\text{, com }|G| = n\text{ e }b \in G$$
+$$ r = \lceil \sqrt{n} \rceil $$
+Dado que $ |G| = n $, então $ a^k = a^{k \mod n} $, e $ 0 \leq k < n $. Assim, re-escrevemos $ k = j r + i $ com $ 0 \leq i, j < r $.\\
 Para encontrar $i$ e $j$, o algorítmo calcula duas sequências
 \begin{align*}
-    x_i &= a^i \bmod p\\
+    x_i &= a^i\\
     y_j &= b a^{-j r} = a^{k - j r}\\
         &= a^{j r + i - j r}\\
-        &= a^{i} = x_i \bmod p
+        &= a^{i}
 \end{align*}
-
 A implementação requer que encontremos $i$ e $j$ tal que $x_i = y_j$. As sequências tem tamanho $r$, são ordenadas em $O(r \log r)$, e buscamos elementos iguais em $O(r)$. A complexidade é $O(r \log r)$
 
 \noindent\hspace{0.03\linewidth}
 \begin{minipage}{.9\linewidth}
 \begin{lstlisting}[language=haskell,caption=Baby-Steps Giant-Steps]
-bsgs :: Integer -> Integer -> Integer -> Integer -> Maybe Integer
-bsgs b a p n = f xs ys where
+babyGiantSteps' :: Integer -> Integer -> Integer -> Integer -> Maybe Integer
+babyGiantSteps' b a p n = f xs ys where
     r = toInteger . ceiling . sqrt . fromIntegral $ n
     s = invMod (binExp a r p) p
     xs = sortOn fst $ zip (iterate ((`mod`p).(*a)) 1) [0..r-1]

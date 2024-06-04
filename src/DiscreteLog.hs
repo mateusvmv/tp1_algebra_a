@@ -6,7 +6,7 @@ import qualified Data.HashMap.Lazy as HM
 import GHC.Num.Integer
 import Debug.Trace
 import Data.List
-import Data.Maybe (isNothing)
+import Data.Maybe
 
 -- Calcula o logaritmo discreto de b na base a, modulo p, em um grupo de ordem n, em O(sqrt(n))
 -- Algoritmo Baby-step Giant-step
@@ -27,23 +27,15 @@ babyGiantSteps b a p = babyGiantSteps' b a p p
 
 -- Algoritmo de Pohlig-Hellman para ordem potência de primo - O(e sqrt(p))
 pohligPrimePower :: Integer -> Integer -> (Integer, Integer) -> Integer -> Maybe Integer
-pohligPrimePower a g (p, e) m =
-    let
-        n = binExp p e m
-        gamma = binExp g (binExp p (e-1) m) m
-        loop :: Integer -> Integer -> Maybe Integer
-        loop k x_bef
-            | k == e = Just x_bef
-            | otherwise = case res of 
-                Nothing -> Nothing 
-                Just res' -> loop (k + 1) (x_bef + (res' * p_k) `mod` n)
-                where
-                    p_k = p ^ k
-                    g_inv = binExp g (m-1-x_bef) m 
-                    ak = binExp (g_inv * a) (n `div` (p ^ (k + 1))) m
-                    res = babyGiantSteps' ak gamma m p
-                    
-    in loop 0 0
+pohligPrimePower b a (p, e) m = k where
+    π i x = binExp x (p^(e-1-i)) m
+    solve b i = babyGiantSteps' (π i b) (π 0 a) m p
+    it (i, b, k) = (i+1, b',) <$> solve b' (i+1) where
+        b' = mod (b * binExp a (m-1-k*(p^i)) m) m
+    k = fmap (sum.map (\(i,_,k) -> k*p^i))
+        . sequence
+        . take (fromInteger e)
+        $ iterate (it=<<) ((0,b,) <$> solve b 0)
 
 -- Calcula o logaritmo discreto de a na base g módulo m, com os fatores de m-1, em O(e*sqrt(p)) = O(m^(1/4)), com p sendo o maior fator primo
 -- Algoritmo de Pohlig-Hellman geral
