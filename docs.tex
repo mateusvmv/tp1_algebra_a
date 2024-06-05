@@ -4,6 +4,7 @@
     \usepackage[parfill]{parskip}
     \usepackage[utf8]{inputenc}
 
+    \usepackage{blindtext, hyperref}
     \usepackage{amsmath,amssymb,amsfonts,amsthm, mathtools}
     \usepackage{listings,xcolor,caption}
 
@@ -49,6 +50,29 @@ O presente documento tem como objetivo explicar a implementação dos algoritmos
     \item Encontrar um gerador $g$ (ou, quando não é possível, um elemento de ordem alta) para o grupo multiplicativo $\mathbb{Z}/(p\mathbb{Z})$.
     \item Determinar o logarítmo discreto de um número $b$ em relação a base $g$ mod $p$, ou seja, $a = \log_{g}{b} \bmod p$.
 \end{itemize} 
+\section{Desenvolvimento}
+
+O trabalho foi desenvolvido na linguagem \href{https://www.haskell.org/}{Haskell}, utilizando do tipo padrão \verb| Integer | para armazenar inteiros de precisão arbitrária.
+
+\section{Módulos}
+
+Os módulos do código fonte são
+
+\begin{itemize}
+\item Utils: O módulo que implementa funções utilitárias para o resto do programa, como a \ref{binExp}.
+\item Primes: O módulo que implementa todas as funções relativas ao cálculo da lista de primos e dos testes de primalidade. Ele utiliza do Utils.
+\item DiscreteLog: O módulo que implementa os algoritmos para calcular o \textit{Logaritmo Discreto} (\ref{discreteLog}). Ele utiliza do Utils e do Primes.
+\item Generator: O módulo que implementa os algoritmos para encontrar os elementos geradores. Ele utiliza o Utils e o Primes.
+\item Main: O módulo principal do programa, que utiliza de todos os acima.
+\end{itemize}
+
+\section{Formatos de Entrada e Saída}
+
+\subsection{Entrada}
+
+A entrada é lida da entrada padrão \verb|stdin|. Ou seja, após rodar o programa o usuário digita com o teclado dois valores inteiros. O primeiro valor é o $N \gg 0$, que é o número do qual será procurando o menor primo maior que $N$. O segundo valor é o argumento do logaritmo discreto.
+
+\section{Utilização do Programa}
 
 \section{Análises de Complexidade}
 
@@ -419,6 +443,7 @@ highOrderElement f = (g, o) where
 \end{minipage}
 
 \subsection{Logarítmo Discreto}
+\label{discreteLog}
 O problema do logarítmo discreto é a equação
 $$ a^k = b \text{ em } G = \langle a \rangle\text{, com }|G| = n\text{ e }b \in G$$
 Como $n$ pode ser muito grande, são utilizados outros algorítmos, porque a solução ingênua roda em $O(n)$
