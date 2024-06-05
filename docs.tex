@@ -48,6 +48,7 @@
 \maketitle
 
 \section{Introdução}
+\label{intro}
 O presente documento tem como objetivo explicar a implementação dos algoritmos utilizados para resolver os seguintes problemas:
 \begin{itemize}
     \item Encontrar o menor número primo $p$ maior que $n$.
@@ -77,7 +78,19 @@ Os módulos do código fonte são
 
 A entrada é lida da entrada padrão \verb|stdin|. Ou seja, após rodar o programa o usuário digita com o teclado dois valores inteiros. O primeiro valor é o $N \gg 0$, que é o número do qual será procurando o menor primo maior que $N$. O segundo valor é o argumento do logaritmo discreto.
 
+\subsection{Saída}
+
+A saída do programa informa os valores descritos em \ref{intro} em um formato auto explicativo. Ele também informa caso a resposta não seja computável em tempo hábil e/ou aproximações foram utilizadas.
+
 \section{Utilização do Programa}
+
+Para utilizar o programa, primeiro instale o GHC. Caso o sistema seja Windows ou LInux, siga \href{https://www.haskell.org/downloads/}{esse tutorial}.
+
+Com o GHC instalado, abra um terminal no diretório raíz do código fonte e execute:
+
+\verb|ghc -O3 -o Main -isrc src/Main.hs|
+
+Agora, basta executar o binário \verb|Main| e em seguida digitar os inteiros de entrada, separados por um \textit{Enter}.
 
 \section{Análises de Complexidade}
 
