@@ -1,3 +1,5 @@
+# Algorítmos
+Neste repositório estão implementados algorítmos para a resolução de fatoração em primos, cálculo de ordem e geradores e logarítmo discreto para grupos modulares.
 # Como executar
 `runghc -isrc src/Main.hs`
 ## Com Optimizações
